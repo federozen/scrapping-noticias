@@ -23,12 +23,15 @@ a{color:inherit;}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:5px;}
 .dot.live{background:#4ade80;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.app-grid{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 60px);transition:grid-template-columns .2s ease;}
-.app-grid.sidebar-hidden{grid-template-columns:0 1fr;}
-.app-grid.sidebar-hidden .sidebar{display:none;}
+.app-grid{display:block;min-height:calc(100vh - 60px);}
 .sidebar-toggle-btn{background:transparent;border:1px solid #333;color:var(--paper);width:32px;height:32px;cursor:pointer;font-size:0.95rem;margin-right:16px;flex-shrink:0;transition:all .15s;}
 .sidebar-toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
-.sidebar{background:var(--ink);color:var(--paper);padding:18px 15px;border-right:1px solid #1a1a1a;overflow-y:auto;position:sticky;top:var(--masthead-h,60px);height:calc(100vh - var(--masthead-h, 60px));}
+.sidebar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:240;opacity:0;pointer-events:none;transition:opacity .25s ease;}
+.sidebar-backdrop.visible{opacity:1;pointer-events:all;}
+.sidebar{background:var(--ink);color:var(--paper);padding:18px 15px;border-right:1px solid #1a1a1a;overflow-y:auto;position:fixed;left:0;top:var(--masthead-h,60px);height:calc(100vh - var(--masthead-h, 60px));width:min(270px, 85vw);z-index:250;transform:translateX(-100%);transition:transform .25s ease;box-shadow:3px 0 14px rgba(0,0,0,.3);}
+.sidebar.open{transform:translateX(0);}
+.sidebar-close-btn{width:100%;padding:8px;margin-bottom:14px;background:transparent;border:1px solid #333;color:#999;font-family:var(--mono);font-size:.66rem;cursor:pointer;text-align:center;}
+.sidebar-close-btn:hover{border-color:var(--accent);color:var(--accent);}
 .sb-label{font-family:var(--mono);font-size:0.58rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid #1a1a1a;padding-bottom:6px;margin-bottom:10px;}
 .sb-section{margin-bottom:20px;}
 .group-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;}
@@ -49,7 +52,7 @@ a{color:inherit;}
 .nav-mini-btn.active{color:var(--paper);border-left-color:var(--accent);background:#111;}
 
 /* ── main / tabs ────────────────────────────────────────────────────── */
-.main-content{background:var(--paper);overflow-y:auto;}
+.main-content{background:var(--paper);overflow-y:auto;width:100%;}
 .tab-nav{display:flex;border-bottom:2px solid var(--ink);background:var(--cream);overflow-x:auto;position:sticky;top:var(--masthead-h,60px);z-index:95;}
 .tab-nav::-webkit-scrollbar{height:0;}
 .tab-btn{padding:10px 16px;border:none;background:transparent;font-family:var(--mono);font-size:0.66rem;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
@@ -291,10 +294,13 @@ textarea.field{min-height:70px;resize:vertical;}
   <div class="ticker-inner" id="ticker"><div class="ticker-seg">Actualizá las fuentes para ver el panorama del día →</div></div>
 </div>
 
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
 <div class="app-grid" id="appGrid">
 
   <!-- ═══════════ SIDEBAR ═══════════ -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebarPanel">
+    <button class="sidebar-close-btn" onclick="toggleSidebar()" title="Cerrar panel">✕ Cerrar</button>
     <div class="sb-section">
       <div class="sb-label">Alcance</div>
       <div class="group-btns">
@@ -1664,12 +1670,15 @@ function pintarCanastaResultado() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// SIDEBAR COLAPSABLE
+// SIDEBAR COLAPSABLE (panel flotante con fondo oscuro, igual patrón que el
+// panel de IA — mucho más robusto en mobile que animar grid-template-columns)
 // ═══════════════════════════════════════════════════════════════════════
 function toggleSidebar() {
-  const grid = document.getElementById('appGrid');
-  const hidden = grid.classList.toggle('sidebar-hidden');
-  localStorage.setItem('mdp_sidebar_hidden', hidden ? '1' : '0');
+  const panel = document.getElementById('sidebarPanel');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const open = panel.classList.toggle('open');
+  backdrop.classList.toggle('visible', open);
+  localStorage.setItem('mdp_sidebar_open', open ? '1' : '0');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1688,8 +1697,10 @@ function medirAlturasSticky() {
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('mdp_api_key');
   if (saved) document.getElementById('apiKeyInput').value = saved;
-  if (localStorage.getItem('mdp_sidebar_hidden') === '1') {
-    document.getElementById('appGrid').classList.add('sidebar-hidden');
+  const savedSidebar = localStorage.getItem('mdp_sidebar_open');
+  if (savedSidebar === null || savedSidebar === '1') {
+    document.getElementById('sidebarPanel').classList.add('open');
+    document.getElementById('sidebarBackdrop').classList.add('visible');
   }
   const savedVista = localStorage.getItem('mdp_vista_modo');
   if (savedVista === 'compact') {
