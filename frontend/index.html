@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Monitor Deportivo Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0a0a0a;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8392b;--accent2:#2c4a7c;--muted:#7a7060;--border:#c8c0b0;--success:#2d6a4f;--ole:#00a846;--purple:#7d3c98;--orange:#d68910;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--serif:'Playfair Display',Georgia,serif;--masthead-h:60px;--tabnav-h:38px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+a{color:inherit;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* ── masthead / sidebar ─────────────────────────────────────────────── */
+.masthead{background:var(--ink);color:var(--paper);border-bottom:3px solid var(--accent);position:sticky;top:0;z-index:100;}
+.masthead-inner{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;max-width:1700px;margin:0 auto;}
+.logo-title{font-family:var(--serif);font-size:1.6rem;font-weight:900;letter-spacing:-0.5px;line-height:1;color:var(--paper);}
+.logo-title span{color:var(--accent);}
+.logo-sub{font-family:var(--mono);font-size:0.58rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.status-bar{font-family:var(--mono);font-size:0.68rem;color:var(--muted);display:flex;gap:16px;align-items:center;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:5px;}
+.dot.live{background:#4ade80;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.app-grid{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 60px);transition:grid-template-columns .2s ease;}
+.app-grid.sidebar-hidden{grid-template-columns:0 1fr;}
+.app-grid.sidebar-hidden .sidebar{display:none;}
+.sidebar-toggle-btn{background:transparent;border:1px solid #333;color:var(--paper);width:32px;height:32px;cursor:pointer;font-size:0.95rem;margin-right:16px;flex-shrink:0;transition:all .15s;}
+.sidebar-toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
+.sidebar{background:var(--ink);color:var(--paper);padding:18px 15px;border-right:1px solid #1a1a1a;overflow-y:auto;position:sticky;top:var(--masthead-h,60px);height:calc(100vh - var(--masthead-h, 60px));}
+.sb-label{font-family:var(--mono);font-size:0.58rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid #1a1a1a;padding-bottom:6px;margin-bottom:10px;}
+.sb-section{margin-bottom:20px;}
+.group-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;}
+.group-btn{padding:7px 3px;border:1px solid #333;background:transparent;color:#888;font-family:var(--mono);font-size:0.6rem;cursor:pointer;transition:all .15s;text-align:center;}
+.group-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.group-btn:hover:not(.active){border-color:#555;color:var(--paper);}
+.scrape-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;font-family:var(--serif);font-size:0.92rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:6px;}
+.scrape-btn:hover{background:#a52d22;}
+.scrape-btn:disabled{background:#333;cursor:not-allowed;}
+.sb-input{width:100%;padding:8px 9px;background:#111;border:1px solid #333;color:var(--paper);font-family:var(--mono);font-size:0.7rem;outline:none;margin-bottom:6px;}
+.sb-input::placeholder{color:#555;}
+.sb-hint{font-family:var(--mono);font-size:0.58rem;color:#555;line-height:1.5;}
+.sb-stat{font-family:var(--mono);font-size:0.62rem;color:#999;display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1a1a1a;}
+.sb-stat b{color:var(--paper);}
+.nav-mini{display:flex;flex-direction:column;gap:2px;}
+.nav-mini-btn{text-align:left;padding:6px 8px;background:transparent;border:none;color:#999;font-family:var(--mono);font-size:0.68rem;cursor:pointer;border-left:2px solid transparent;}
+.nav-mini-btn:hover{color:var(--paper);background:#111;}
+.nav-mini-btn.active{color:var(--paper);border-left-color:var(--accent);background:#111;}
+
+/* ── main / tabs ────────────────────────────────────────────────────── */
+.main-content{background:var(--paper);overflow-y:auto;}
+.tab-nav{display:flex;border-bottom:2px solid var(--ink);background:var(--cream);overflow-x:auto;position:sticky;top:var(--masthead-h,60px);z-index:95;}
+.tab-nav::-webkit-scrollbar{height:0;}
+.tab-btn{padding:10px 16px;border:none;background:transparent;font-family:var(--mono);font-size:0.66rem;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.tab-btn.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
+.tab-btn:hover:not(.active){color:var(--ink);}
+.tab-content{display:none;padding:20px 28px;}
+.tab-content.active{display:block;}
+.state-area{padding:60px 40px;text-align:center;}
+.state-icon{font-size:3rem;margin-bottom:16px;opacity:.4;}
+.state-title{font-family:var(--serif);font-size:1.3rem;margin-bottom:8px;color:var(--muted);}
+.state-sub{font-family:var(--mono);font-size:0.66rem;color:var(--border);}
+.section-title{font-family:var(--serif);font-size:1.15rem;font-weight:900;margin-bottom:4px;}
+.section-sub{font-family:var(--mono);font-size:0.66rem;color:var(--muted);margin-bottom:16px;}
+
+/* ── stats / cards ──────────────────────────────────────────────────── */
+.stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.stat-card{background:white;border:1px solid var(--border);padding:10px 16px;min-width:100px;}
+.stat-num{font-family:var(--serif);font-weight:900;font-size:1.35rem;}
+.stat-label{font-family:var(--mono);font-size:0.56rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;}
+.news-card{background:white;border:1px solid var(--border);cursor:pointer;transition:all .15s;position:relative;}
+.news-card:hover{border-color:var(--ink);box-shadow:3px 3px 0 var(--border);}
+.news-card-img{width:100%;height:118px;object-fit:cover;background:var(--cream);display:block;}
+.news-card-body{padding:11px 13px;}
+.news-card-title{font-family:var(--serif);font-size:0.92rem;font-weight:700;line-height:1.32;margin-bottom:6px;}
+.news-card-foot{display:flex;align-items:center;justify-content:space-between;}
+.news-card-chip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px;font-family:var(--mono);color:white;}
+.news-card-check{position:absolute;top:8px;right:8px;width:20px;height:20px;background:rgba(255,255,255,.92);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);z-index:2;}
+.news-card-check.checked{background:var(--accent2);border-color:var(--accent2);color:white;}
+.list-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.list-row-img{width:78px;height:56px;object-fit:cover;flex-shrink:0;background:var(--cream);}
+.list-row-body{flex:1;}
+.list-row-title{font-family:var(--serif);font-size:0.87rem;font-weight:700;line-height:1.3;}
+.list-row-meta{display:flex;gap:8px;align-items:center;margin-top:3px;}
+.chip{font-size:9px;font-weight:700;padding:1px 7px;border-radius:2px;font-family:var(--mono);color:white;display:inline-block;}
+.chip.outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.empty-note{font-family:var(--mono);font-size:.7rem;color:var(--muted);padding:20px 0;}
+
+/* ── vista compacta: lista densa multi-columna tipo agregador clásico ── */
+.news-list-compact{column-count:1;column-gap:22px;}
+@media (min-width:680px){.news-list-compact{column-count:2;}}
+@media (min-width:1050px){.news-list-compact{column-count:3;}}
+@media (min-width:1400px){.news-list-compact{column-count:4;}}
+.news-row-compact{break-inside:avoid;display:flex;align-items:baseline;gap:6px;padding:5px 4px;border-bottom:1px solid var(--cream);cursor:pointer;font-size:.78rem;line-height:1.4;}
+.news-row-compact:hover{background:var(--cream);}
+.compact-chk{width:13px;height:13px;border:1px solid var(--border);flex-shrink:0;cursor:pointer;font-size:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);align-self:center;background:white;}
+.compact-chk.checked{background:var(--accent2);border-color:var(--accent2);color:white;}
+.compact-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;align-self:center;}
+.compact-src{font-family:var(--mono);font-size:.6rem;font-weight:700;flex-shrink:0;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.compact-title{flex:1;color:var(--ink);min-width:0;}
+.compact-ents{font-family:var(--mono);font-size:.62rem;color:var(--muted);}
+
+/* ── riel lateral de medios (Nacionales/Internacionales/Primicias) ────── */
+.medio-layout{display:flex;gap:18px;align-items:flex-start;}
+.medio-rail{width:185px;flex-shrink:0;position:sticky;top:calc(var(--masthead-h,60px) + var(--tabnav-h,38px) + 14px);max-height:calc(100vh - var(--masthead-h,60px) - var(--tabnav-h,38px) - 28px);overflow-y:auto;background:white;border:1px solid var(--border);}
+.medio-rail-item{padding:8px 12px;font-family:var(--mono);font-size:.66rem;cursor:pointer;border-left:3px solid transparent;color:var(--muted);border-bottom:1px solid var(--cream);display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.medio-rail-item:hover{background:var(--cream);color:var(--ink);}
+.medio-rail-item.active{background:var(--cream);color:var(--ink);font-weight:600;border-left-width:3px;border-left-color:var(--accent);}
+.medio-rail-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.medio-rail-count{margin-left:auto;color:var(--border);font-size:.6rem;flex-shrink:0;}
+.medio-rail-item.active .medio-rail-count{color:var(--muted);}
+.medio-content{flex:1;min-width:0;}
+@media (max-width:820px){.medio-layout{flex-direction:column;}.medio-rail{position:static;width:100%;max-height:none;display:flex;flex-wrap:wrap;}.medio-rail-item{border-bottom:none;border-right:1px solid var(--cream);}}
+
+/* ── ticker ─────────────────────────────────────────────────────────── */
+.ticker-bar{background:var(--ink);color:white;overflow:hidden;white-space:nowrap;border-bottom:2px solid var(--accent);}
+.ticker-inner{display:inline-block;animation:ticker 130s linear infinite;font-family:var(--mono);font-size:0.64rem;padding:6px 0;}
+.ticker-inner:hover{animation-play-state:paused;}
+.ticker-seg{display:inline-block;padding:0 26px;}
+.ticker-flag{color:var(--accent);font-weight:700;margin-right:6px;}
+.ticker-count{color:#888;font-size:0.56rem;margin-right:14px;}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── filtros / chips row ────────────────────────────────────────────── */
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;position:sticky;top:calc(var(--masthead-h,60px) + var(--tabnav-h,38px));z-index:90;background:var(--paper);padding:10px 0;border-bottom:1px solid var(--border);}
+.filter-btn{padding:6px 14px;border:1px solid var(--border);background:transparent;font-family:var(--mono);font-size:0.64rem;cursor:pointer;color:var(--muted);transition:all .15s;}
+.filter-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.toggle-sw{appearance:none;width:32px;height:17px;border:1px solid var(--border);background:white;border-radius:9px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle-sw:checked{background:var(--ole);border-color:var(--ole);}
+.toggle-sw::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:left .2s;}
+.toggle-sw:checked::after{left:17px;background:white;}
+.toggle-lbl{font-family:var(--mono);font-size:0.66rem;color:var(--muted);}
+
+/* ── tendencias ─────────────────────────────────────────────────────── */
+.tend-item{margin-bottom:8px;padding:10px 14px;border:1px solid var(--border);border-left:4px solid #888;background:white;}
+.tend-header{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.tend-count{font-family:var(--mono);font-size:0.65rem;font-weight:700;}
+.tend-bar-wrap{flex:1;height:4px;background:var(--border);min-width:60px;}
+.tend-bar{height:100%;}
+.tend-title{font-family:var(--serif);font-size:0.95rem;font-weight:700;line-height:1.3;margin-bottom:6px;}
+.tend-expand-btn{font-family:var(--mono);font-size:0.6rem;padding:2px 8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;margin-top:6px;}
+.tend-subnoticias{margin-top:8px;display:none;border-top:1px solid var(--border);padding-top:8px;}
+.tend-subnoticias.open{display:block;}
+.tend-sub-item{font-size:0.75rem;margin-bottom:4px;color:var(--muted);}
+.tend-sub-item a{color:var(--accent2);text-decoration:none;}
+.nube-container{position:relative;width:100%;height:270px;background:white;border:1px solid var(--border);overflow:hidden;margin-bottom:16px;}
+.nube-word{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--sans);}
+.nube-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.rank-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+.rank-name{font-family:var(--serif);font-weight:700;font-size:.85rem;width:150px;flex-shrink:0;}
+.rank-bar-wrap{flex:1;height:8px;background:var(--cream);}
+.rank-bar{height:100%;background:var(--accent2);}
+.rank-num{font-family:var(--mono);font-size:.68rem;color:var(--muted);width:70px;text-align:right;}
+
+/* ── olé vs todos ───────────────────────────────────────────────────── */
+.ole-sub-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+.ole-sub-btn{padding:7px 16px;border:none;background:transparent;font-family:var(--mono);font-size:0.65rem;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;}
+.ole-sub-btn.active{color:var(--ink);border-bottom-color:var(--ole);font-weight:600;}
+.ole-sub-content{display:none;}
+.ole-sub-content.active{display:block;}
+.partes-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.partes-col{min-width:0;}
+@media (max-width:900px){.partes-grid{grid-template-columns:1fr;}}
+.ole-metrics{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.ole-metric{background:white;border:1px solid var(--border);padding:12px 18px;text-align:center;flex:1;min-width:120px;}
+.ole-metric-num{font-family:var(--serif);font-size:1.5rem;font-weight:900;}
+.ole-metric-label{font-family:var(--mono);font-size:0.56rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+/* ── agenda ─────────────────────────────────────────────────────────── */
+.agenda-item{margin-bottom:10px;padding:12px 15px;border:1px solid var(--border);border-left:5px solid #888;background:white;}
+.agenda-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+.agenda-badge{font-family:var(--mono);font-size:.62rem;font-weight:700;color:white;padding:2px 9px;border-radius:2px;}
+.agenda-motivo{font-family:var(--mono);font-size:.68rem;color:var(--muted);flex:1;}
+.agenda-title{font-family:var(--serif);font-size:1rem;font-weight:700;line-height:1.3;margin-bottom:8px;}
+.agenda-actions{display:flex;gap:8px;}
+.agenda-btn{padding:5px 12px;font-family:var(--mono);font-size:.62rem;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.agenda-btn:hover{border-color:var(--ink);color:var(--ink);}
+.agenda-brief-box{margin-top:10px;padding:10px 12px;background:var(--cream);font-size:.8rem;line-height:1.6;white-space:pre-wrap;display:none;}
+.agenda-brief-box.open{display:block;}
+
+/* ── AI panel lateral ───────────────────────────────────────────────── */
+.ai-panel{position:fixed;right:0;top:0;width:680px;max-width:94vw;height:100vh;background:var(--ink);color:var(--paper);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:400;display:flex;flex-direction:column;border-left:3px solid var(--accent);}
+.ai-panel.open{transform:translateX(0);}
+.ai-header{padding:16px 22px 12px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;}
+.ai-title{font-family:var(--serif);font-size:1rem;}
+.ai-title span{color:var(--accent);}
+.close-ai{background:transparent;border:1px solid #333;color:#888;width:26px;height:26px;cursor:pointer;font-size:.9rem;}
+.ai-body{flex:1;overflow-y:auto;padding:16px 22px;}
+.ai-sel-list{padding:8px 0 14px;border-bottom:1px solid #222;margin-bottom:12px;max-height:120px;overflow-y:auto;}
+.ai-sel-item{font-size:0.72rem;color:#ccc;padding:2px 0;}
+.ai-sel-item::before{content:'— ';color:var(--accent);}
+.ai-label{font-family:var(--mono);font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:12px 0 6px;}
+.ai-op-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:6px;}
+.ai-op-btn{padding:7px 3px;border:1px solid #333;background:transparent;color:#888;font-family:var(--mono);font-size:0.6rem;cursor:pointer;text-align:center;}
+.ai-op-btn.active{background:var(--accent2);border-color:var(--accent2);color:white;}
+.ai-textarea{width:100%;padding:8px 10px;background:#111;border:1px solid #333;color:var(--paper);font-family:var(--mono);font-size:0.72rem;resize:vertical;min-height:64px;outline:none;}
+.ai-gen-btn{width:100%;padding:11px;background:var(--accent);color:white;border:none;font-family:var(--serif);font-size:.9rem;font-weight:700;cursor:pointer;margin-top:12px;}
+.ai-gen-btn:disabled{background:#333;cursor:not-allowed;}
+.ai-output{margin-top:16px;padding-top:14px;border-top:1px solid #222;}
+.ai-result{white-space:pre-wrap;font-family:var(--sans);font-size:.82rem;line-height:1.75;color:#ddd;}
+.ai-textarea-copy{width:100%;min-height:400px;background:#0a0a0a;border:1px solid #2a2a2a;color:#e0e0e0;font-family:var(--sans);font-size:.82rem;line-height:1.75;padding:12px 14px;resize:vertical;outline:none;box-sizing:border-box;margin-top:10px;}
+.ai-copy-btn{margin-top:10px;padding:5px 12px;background:transparent;border:1px solid #333;color:#888;font-family:var(--mono);font-size:.62rem;cursor:pointer;}
+.loading-dots span{animation:blink 1.2s infinite;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+
+/* ── selección flotante ─────────────────────────────────────────────── */
+.sel-float{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 22px;font-family:var(--mono);font-size:.72rem;display:flex;align-items:center;gap:12px;z-index:150;border:1px solid #333;opacity:0;pointer-events:none;transition:opacity .2s;}
+.sel-float.visible{opacity:1;pointer-events:all;}
+.sel-count{color:var(--accent);font-weight:600;}
+.sel-ia-btn{padding:5px 12px;background:var(--accent2);color:white;border:none;font-family:var(--mono);font-size:.66rem;cursor:pointer;}
+.sel-clear-btn{padding:5px 10px;background:transparent;border:1px solid #444;color:#888;font-family:var(--mono);font-size:.66rem;cursor:pointer;}
+
+.scroll-top-btn{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--paper);border:1px solid #333;font-size:1.1rem;cursor:pointer;z-index:200;opacity:0;pointer-events:none;transform:translateY(8px);transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.scroll-top-btn.visible{opacity:1;pointer-events:all;transform:translateY(0);}
+.scroll-top-btn:hover{background:var(--accent);}
+
+/* ── modal detalle ──────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:center;justify-content:center;padding:36px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--paper);max-width:720px;width:100%;max-height:82vh;overflow-y:auto;padding:30px 34px;position:relative;}
+.modal-close{position:absolute;top:14px;right:14px;background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;cursor:pointer;font-size:.9rem;}
+.modal-title{font-family:var(--serif);font-size:1.35rem;font-weight:900;line-height:1.3;margin-bottom:14px;padding-right:34px;}
+.modal-img{width:100%;max-height:280px;object-fit:cover;margin-bottom:14px;}
+.modal-body{font-size:.86rem;line-height:1.8;color:#333;white-space:pre-wrap;margin-bottom:14px;}
+.modal-actions{display:flex;gap:8px;}
+.modal-btn{padding:8px 16px;background:var(--accent2);color:white;border:none;font-family:var(--mono);font-size:.68rem;cursor:pointer;}
+.modal-btn.alt{background:transparent;border:1px solid var(--border);color:var(--muted);}
+
+/* ── canasta ────────────────────────────────────────────────────────── */
+.canasta-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.canasta-item-wrap{border-bottom:1px solid var(--border);}
+.canasta-item-wrap .canasta-item{border-bottom:none;}
+.canasta-edit-box{display:none;padding:0 0 14px;}
+.canasta-edit-box.open{display:block;}
+.canasta-item-body{flex:1;}
+.canasta-item-title{font-family:var(--serif);font-weight:700;font-size:.88rem;line-height:1.3;}
+.canasta-item-meta{font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-top:3px;}
+.canasta-item-actions{display:flex;gap:6px;}
+.mini-btn{padding:3px 9px;font-family:var(--mono);font-size:.6rem;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.mini-btn:hover{border-color:var(--ink);color:var(--ink);}
+
+/* ── nota rápida wizard ─────────────────────────────────────────────── */
+.wizard-step{background:white;border:1px solid var(--border);padding:18px 20px;margin-bottom:14px;}
+.wizard-step-label{font-family:var(--mono);font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.wizard-radio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px;margin-bottom:10px;}
+.wizard-radio{padding:8px 10px;border:1px solid var(--border);background:transparent;font-family:var(--mono);font-size:.68rem;cursor:pointer;text-align:center;color:var(--muted);}
+.wizard-radio.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+textarea.field, input.field{width:100%;padding:9px 11px;border:1px solid var(--border);background:white;font-family:var(--sans);font-size:.82rem;outline:none;}
+textarea.field{min-height:70px;resize:vertical;}
+
+/* ── tono editorial ─────────────────────────────────────────────────── */
+.tono-dist{display:flex;height:26px;border:1px solid var(--border);overflow:hidden;margin-bottom:14px;}
+.tono-dist-seg{display:flex;align-items:center;justify-content:center;color:white;font-family:var(--mono);font-size:.6rem;}
+.tono-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.tono-medio{width:110px;flex-shrink:0;font-family:var(--mono);font-size:.65rem;font-weight:700;}
+.tono-body{flex:1;}
+.tono-titular{font-size:.82rem;line-height:1.4;}
+.tono-razon{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-top:2px;}
+
+.small-btn{padding:6px 13px;font-family:var(--mono);font-size:.66rem;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.small-btn:hover{border-color:var(--ink);color:var(--ink);}
+.small-btn.primary{background:var(--accent2);color:white;border-color:var(--accent2);}
+.small-btn.primary:hover{background:#1e3a63;}
+.err-box{background:#fdecea;border:1px solid #e6a09a;color:#a52d22;padding:10px 14px;font-family:var(--mono);font-size:.72rem;margin-bottom:14px;}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div style="display:flex;align-items:center">
+      <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Mostrar/ocultar panel lateral">☰</button>
+      <div>
+        <div class="logo-title">Monitor <span>Deportivo</span> Pro</div>
+        <div class="logo-sub">panorama de medios deportivos en tiempo real</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span><span class="dot" id="liveDot"></span><span id="statusTxt">sin actualizar</span></span>
+      <span id="ultimaAct"></span>
+    </div>
+  </div>
+</div>
+
+<div class="ticker-bar">
+  <div class="ticker-inner" id="ticker"><div class="ticker-seg">Actualizá las fuentes para ver el panorama del día →</div></div>
+</div>
+
+<div class="app-grid" id="appGrid">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Alcance</div>
+      <div class="group-btns">
+        <button class="group-btn active" data-scope="todas" onclick="setScope('todas')">Todas</button>
+        <button class="group-btn" data-scope="nac" onclick="setScope('nac')">🇦🇷 Nac</button>
+        <button class="group-btn" data-scope="int" onclick="setScope('int')">🌍 Int</button>
+      </div>
+      <button class="scrape-btn" id="btnActualizar" onclick="actualizarFuentes()">Actualizar fuentes</button>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Vista</div>
+      <div class="group-btns" style="grid-template-columns:1fr 1fr">
+        <button class="group-btn vista-btn active" data-vista="cards" onclick="setVistaModo('cards')">🗂 Tarjetas</button>
+        <button class="group-btn vista-btn" data-vista="compact" onclick="setVistaModo('compact')">☰ Compacta</button>
+      </div>
+      <div class="sb-hint">Compacta muestra muchos más titulares por pantalla, sin imágenes — ideal para barrer el panorama rápido.</div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">API Key Claude</div>
+      <input class="sb-input" type="password" id="apiKeyInput" placeholder="sk-ant-..." oninput="guardarApiKey()"/>
+      <div class="sb-hint">Se guarda solo en este navegador (localStorage). Necesaria para las pestañas con IA.</div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Panorama</div>
+      <div class="sb-stat"><span>Fuentes monitoreadas</span><b id="sbTotalFuentes">65</b></div>
+      <div class="sb-stat"><span>Noticias cargadas</span><b id="sbTotalNoticias">0</b></div>
+      <div class="sb-stat"><span>Tendencias detectadas</span><b id="sbTendencias">0</b></div>
+      <div class="sb-stat"><span>Sin cobertura Olé</span><b id="sbSinOle">0</b></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Canasta</div>
+      <div class="sb-stat"><span>Notas guardadas</span><b id="sbCanasta">0</b></div>
+      <button class="scrape-btn" style="background:var(--purple)" onclick="irACanasta()">🧺 Ver canasta</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <div class="main-content">
+
+    <div class="tab-nav" id="tabNav">
+      <button class="tab-btn active" data-tab="agenda" onclick="setTab('agenda')">📅 Agenda</button>
+      <button class="tab-btn" data-tab="buscar" onclick="setTab('buscar')">🔎 Buscar</button>
+      <button class="tab-btn" data-tab="nac" onclick="setTab('nac')">🇦🇷 Nacionales</button>
+      <button class="tab-btn" data-tab="int" onclick="setTab('int')">🌍 Internacionales</button>
+      <button class="tab-btn" data-tab="esp" onclick="setTab('esp')">📰 Primicias</button>
+      <button class="tab-btn" data-tab="exterior" onclick="setTab('exterior')">🌎 Impacto Argentina</button>
+      <button class="tab-btn" data-tab="filtros" onclick="setTab('filtros')">🎯 Filtros</button>
+      <button class="tab-btn" data-tab="ole" onclick="setTab('ole')">🟢 Olé vs Todos</button>
+      <button class="tab-btn" data-tab="tend" onclick="setTab('tend')">📊 Tendencias</button>
+      <button class="tab-btn" data-tab="ia" onclick="setTab('ia')">✦ Análisis IA</button>
+      <button class="tab-btn" data-tab="nota" onclick="setTab('nota')">✍️ Nota Rápida</button>
+      <button class="tab-btn" data-tab="sent" onclick="setTab('sent')">🎭 Tono Editorial</button>
+      <button class="tab-btn" data-tab="canasta" onclick="setTab('canasta')">🧺 Canasta</button>
+    </div>
+
+    <div class="tab-content active" id="tab-agenda"></div>
+    <div class="tab-content" id="tab-buscar"></div>
+    <div class="tab-content" id="tab-nac"></div>
+    <div class="tab-content" id="tab-int"></div>
+    <div class="tab-content" id="tab-esp"></div>
+    <div class="tab-content" id="tab-exterior"></div>
+    <div class="tab-content" id="tab-filtros"></div>
+    <div class="tab-content" id="tab-ole"></div>
+    <div class="tab-content" id="tab-tend"></div>
+    <div class="tab-content" id="tab-ia"></div>
+    <div class="tab-content" id="tab-nota"></div>
+    <div class="tab-content" id="tab-sent"></div>
+    <div class="tab-content" id="tab-canasta"></div>
+
+  </div>
+</div>
+
+<!-- ═══════════ FLOTANTES / OVERLAYS ═══════════ -->
+<div class="sel-float" id="selFloat">
+  <span><span class="sel-count" id="selCount">0</span> seleccionadas</span>
+  <button class="sel-ia-btn" onclick="enviarSeleccionA('nota')">✍️ Nota Rápida</button>
+  <button class="sel-ia-btn" onclick="enviarSeleccionA('sent')">🎭 Tono Editorial</button>
+  <button class="sel-ia-btn" style="background:var(--purple)" onclick="agregarSeleccionACanasta()">🧺 A canasta</button>
+  <button class="sel-clear-btn" onclick="limpiarSeleccion()">Limpiar ✕</button>
+</div>
+
+<button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Volver arriba">▲</button>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-header">
+    <div class="ai-title">✦ <span id="aiPanelTitle">Generar con IA</span></div>
+    <button class="close-ai" onclick="cerrarAiPanel()">✕</button>
+  </div>
+  <div class="ai-body" id="aiPanelBody"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════════════════
+const STATE = {
+  fuentes: {nacionales: [], internacionales: [], primicias: []},
+  tendencias: [], nubeNac: [], nubeInt: [],
+  ole: {exclusivos_ole: [], faltantes_en_ole: [], cubiertos_por_ambos: []},
+  agenda: [], canasta: [],
+  filtrosTematicos: {},
+  scope: 'todas', activeTab: 'agenda',
+  seleccion: [],            // [{fuente:{id,nombre,color}, noticia:{titulo,url,imagen}}]
+  totalMedios: 65,
+  cargado: false,
+  modalItem: null,
+  medioFiltro: {nac: 'todas', int: 'todas', esp: 'todas'},
+  vistaModo: 'cards',       // 'cards' | 'compact' — se restaura desde localStorage en el init
+  buscarQuery: '', buscarAmbito: 'todas', buscarResultados: null,
+  exteriorNotas: null,
+  filtroActivo: null, filtroSoloAr: false, filtroCustomTxt: '', filtroResultados: null,
+  oleSubTab: 'exclusivos_ole', exclusivosTodos: null,
+  tendFiltro: 'todas', nubeTab: 'nac', rankingEntidades: null,
+  iaSubTab: 'general', iaTemasEditor: '', iaResultGeneral: null, iaResultInforme: null,
+  parteNacResult: null, parteIntResult: null,
+  notaTema: '', notaEstilo: 'Informativa', notaTipo: 'Nota completa', notaContexto: '', notaResultado: null,
+  notaBuscarQ: '', notaBuscarResultados: null,
+  sentQuery: '', sentResultado: null,
+  canastaTema: '', canastaEstilo: 'Informativa', canastaTipo: 'Nota completa', canastaContexto: '', canastaResultado: null,
+};
+
+function api(method, path, body) {
+  const opts = {method, headers: {'Content-Type': 'application/json'}};
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  return fetch(path, opts).then(async r => {
+    let data;
+    try { data = await r.json(); } catch (e) { data = {}; }
+    if (!r.ok) throw new Error(data.detail || `Error ${r.status}`);
+    return data;
+  });
+}
+const apiGet = (path) => api('GET', path);
+const apiPost = (path, body) => api('POST', path, body);
+
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function truncate(s, n) { s = s || ''; return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+function timeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return 'recién';
+  if (mins < 60) return `hace ${mins} min`;
+  return `hace ${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+function colorLuma(hex) {
+  hex = (hex || '#888888').replace('#', '');
+  if (hex.length !== 6) return 0;
+  const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b);
+}
+
+// ── API KEY ───────────────────────────────────────────────────────────
+function guardarApiKey() {
+  localStorage.setItem('mdp_api_key', document.getElementById('apiKeyInput').value.trim());
+}
+function getApiKey() {
+  return (document.getElementById('apiKeyInput').value || '').trim();
+}
+function requireApiKey() {
+  const k = getApiKey();
+  if (!k) { alert('Pegá tu API key de Anthropic en la barra lateral primero.'); return null; }
+  return k;
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────
+const RENDERERS = {}; // tabId -> función de render (se define más abajo por sección)
+
+function setTab(tab) {
+  STATE.activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+  if (RENDERERS[tab]) RENDERERS[tab]();
+}
+
+// ── SCOPE (Todas / Nac / Int) ───────────────────────────────────────
+function setScope(scope) {
+  STATE.scope = scope;
+  document.querySelectorAll('.group-btn').forEach(b => b.classList.toggle('active', b.dataset.scope === scope));
+}
+
+// ── VISTA (Tarjetas / Compacta) ──────────────────────────────────────
+function setVistaModo(modo) {
+  STATE.vistaModo = modo;
+  localStorage.setItem('mdp_vista_modo', modo);
+  document.querySelectorAll('.vista-btn').forEach(b => b.classList.toggle('active', b.dataset.vista === modo));
+  if (RENDERERS[STATE.activeTab]) RENDERERS[STATE.activeTab]();
+}
+
+function irACanasta() { setTab('canasta'); }
+
+// ── REGISTRO DE ITEMS ────────────────────────────────────────────────
+// En vez de incrustar JSON dentro de atributos onclick (frágil con comillas),
+// guardamos los objetos acá y pasamos solo el índice.
+const REGISTRY = [];
+function regPush(obj) { REGISTRY.push(obj); return REGISTRY.length - 1; }
+function regGet(i) { return REGISTRY[i]; }
+// ═══════════════════════════════════════════════════════════════════════
+// ACTUALIZAR FUENTES
+// ═══════════════════════════════════════════════════════════════════════
+async function cargarFuentesDisponibles() {
+  try {
+    const d = await apiGet('/api/fuentes');
+    STATE.totalMedios = d.total;
+    document.getElementById('sbTotalFuentes').textContent = d.total;
+  } catch (e) { /* silencioso: no bloquea la carga inicial */ }
+}
+
+async function actualizarFuentes() {
+  const btn = document.getElementById('btnActualizar');
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Actualizando…';
+  document.getElementById('statusTxt').textContent = 'escaneando medios…';
+  document.getElementById('liveDot').classList.remove('live');
+  try {
+    const body = {solo_nac: STATE.scope === 'nac', solo_int: STATE.scope === 'int'};
+    const d = await apiPost('/api/actualizar', body);
+    STATE.fuentes = d.fuentes;
+    STATE.tendencias = d.tendencias;
+    STATE.ole = d.ole_analisis;
+    STATE.agenda = d.agenda;
+    STATE.cargado = true;
+
+    document.getElementById('sbTotalNoticias').textContent = d.total_noticias;
+    document.getElementById('sbTendencias').textContent = d.stats.tendencias;
+    document.getElementById('sbSinOle').textContent = d.stats.sin_ole;
+    document.getElementById('statusTxt').textContent = `${d.total_medios} medios · ${d.total_noticias} notas`;
+    document.getElementById('liveDot').classList.add('live');
+    document.getElementById('ultimaAct').textContent = 'actualizado recién';
+
+    renderTicker();
+    if (d.errores && d.errores.length) {
+      console.warn('Fuentes con error:', d.errores);
+    }
+    if (RENDERERS[STATE.activeTab]) RENDERERS[STATE.activeTab]();
+    actualizarBadgeCanasta();
+  } catch (e) {
+    document.getElementById('statusTxt').textContent = 'error al actualizar';
+    alert('Error al actualizar fuentes: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+function renderTicker() {
+  const el = document.getElementById('ticker');
+  const top = STATE.tendencias.slice(0, 14);
+  if (!top.length) { el.innerHTML = '<div class="ticker-seg">Sin tendencias todavía.</div>'; return; }
+  const segs = top.map(t =>
+    `<span class="ticker-seg"><span class="ticker-flag">${t.tiene_ole ? '●' : '○'}</span>${escapeHtml(truncate(t.titulo, 90))}<span class="ticker-count"> · ${t.cant_medios} medios</span></span>`
+  ).join('');
+  el.innerHTML = segs + segs; // duplicado para el loop continuo
+}
+
+function actualizarBadgeCanasta() {
+  document.getElementById('sbCanasta').textContent = STATE.canasta.length;
+}
+// ═══════════════════════════════════════════════════════════════════════
+// AGENDA
+// ═══════════════════════════════════════════════════════════════════════
+const AGENDA_COLORES = {
+  'SUBIR YA': '#c0392b', 'REDACTAR': '#d68910', 'RETOMAR': '#7d3c98',
+  'SEGUIR': '#2471a3', 'EMPUJAR': '#1e8449',
+};
+
+function emptyState(icon, title, sub) {
+  return `<div class="state-area"><div class="state-icon">${icon}</div><div class="state-title">${title}</div><div class="state-sub">${sub}</div></div>`;
+}
+
+function renderAgenda() {
+  const el = document.getElementById('tab-agenda');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('📅', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral para calcular la agenda del día.');
+    return;
+  }
+  const momentumTxt = STATE.agenda.length && STATE.tendencias.length && STATE.ultimoHayMomentum
+    ? 'con momentum vs. la pasada anterior' : 'momentum solo por sesión (memoria en RAM del proceso)';
+
+  let html = `
+    <div class="section-title">📅 Agenda accionable</div>
+    <div class="section-sub">Qué mover ya, qué redactar y qué viene creciendo — ${momentumTxt}.</div>
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="small-btn primary" onclick="generarParteEditorial()">✦ Generar parte editorial (IA)</button>
+    </div>
+    <div id="parteEditorialOut"></div>
+  `;
+  if (!STATE.agenda.length) {
+    html += emptyState('✅', 'Sin acciones urgentes', 'No se detectaron temas que requieran atención inmediata en esta pasada.');
+  } else {
+    html += STATE.agenda.map((it, i) => {
+      const color = AGENDA_COLORES[it.accion] || '#555';
+      const deltaTxt = it.nuevo ? '🆕 nuevo' : (it.delta > 0 ? `▲ +${it.delta}` : (it.delta < 0 ? `▼ ${it.delta}` : '— sin cambio'));
+      return `
+        <div class="agenda-item" style="border-left-color:${color}">
+          <div class="agenda-head">
+            <span class="agenda-badge" style="background:${color}">${it.accion}</span>
+            <span class="agenda-motivo">${escapeHtml(it.motivo)}</span>
+          </div>
+          <div class="agenda-title">${it.url ? `<a href="${it.url}" target="_blank" rel="noopener">${escapeHtml(it.titulo)}</a>` : escapeHtml(it.titulo)}</div>
+          <div style="font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-bottom:8px;">
+            ${it.cant_medios} medio(s) · ${it.nac} nac / ${it.intl} int · ${deltaTxt}
+          </div>
+          <div class="agenda-actions">
+            ${it.noticias && it.noticias.length ? `<button class="agenda-btn" onclick="toggleAgendaNoticias(${i})">Ver cómo lo titularon (${it.noticias.length})</button>` : ''}
+            <button class="agenda-btn" onclick="generarBriefItem(${i}, this)">✦ Brief IA</button>
+            <button class="agenda-btn" onclick="agregarACanastaReg(${regPush({titulo: it.titulo, url: it.url || null, fuente: {id: 'agenda', nombre: 'Agenda', color}})})">🧺 A canasta</button>
+          </div>
+          <div class="tend-subnoticias" id="agendaNoticias-${i}">
+            ${(it.noticias || []).map(n => `<div class="tend-sub-item">— [${escapeHtml(n.fuente.nombre)}] ${n.url ? `<a href="${n.url}" target="_blank">${escapeHtml(n.titulo)}</a>` : escapeHtml(n.titulo)}</div>`).join('')}
+          </div>
+          <div class="agenda-brief-box" id="agendaBrief-${i}"></div>
+        </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
+}
+RENDERERS['agenda'] = renderAgenda;
+
+function toggleAgendaNoticias(i) {
+  document.getElementById('agendaNoticias-' + i).classList.toggle('open');
+}
+
+async function generarParteEditorial() {
+  const key = requireApiKey(); if (!key) return;
+  const out = document.getElementById('parteEditorialOut');
+  out.innerHTML = `<div class="empty-note">Generando<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  try {
+    const d = await apiPost('/api/parte-editorial', {api_key: key});
+    out.innerHTML = `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:14px 16px;color:#222;margin-bottom:16px;">${escapeHtml(d.resultado)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function generarBriefItem(i, btn) {
+  const key = requireApiKey(); if (!key) return;
+  const box = document.getElementById('agendaBrief-' + i);
+  box.classList.add('open');
+  box.textContent = 'Generando…';
+  const titulo = STATE.agenda[i].titulo;
+  try {
+    const d = await apiPost('/api/brief', {api_key: key, titulo});
+    box.textContent = d.resultado;
+  } catch (e) {
+    box.textContent = 'Error: ' + e.message;
+  }
+}
+// ═══════════════════════════════════════════════════════════════════════
+// COMPONENTE COMPARTIDO: GRILLA DE NOTICIAS (nac / int / esp / buscar / filtros / exterior)
+// ═══════════════════════════════════════════════════════════════════════
+const PLACEHOLDER_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="140"><rect width="300" height="140" fill="#ede8dc"/><text x="150" y="74" font-family="monospace" font-size="11" fill="#c8c0b0" text-anchor="middle">sin imagen</text></svg>`
+);
+
+function selectionKeySet() {
+  return new Set(STATE.seleccion.map(s => s.noticia.titulo));
+}
+
+function renderNewsGrid(items, opts) {
+  opts = opts || {};
+  if (!items || !items.length) return `<div class="empty-note">${opts.emptyMsg || 'Sin noticias para mostrar.'}</div>`;
+  if (STATE.vistaModo === 'compact') return renderNewsCompact(items, opts);
+  const selKeys = selectionKeySet();
+  const cards = items.map(item => {
+    const idx = regPush(item);
+    const checked = selKeys.has(item.noticia.titulo);
+    const f = item.fuente;
+    const luma = colorLuma(f.color);
+    const textColor = luma > 190 ? '#111' : '#fff';
+    const img = item.noticia.imagen || '';
+    return `
+      <div class="news-card" data-idx="${idx}">
+        <div class="news-card-check ${checked ? 'checked' : ''}" onclick="event.stopPropagation();toggleSeleccion(${idx}, this)">${checked ? '✓' : '+'}</div>
+        <img class="news-card-img" data-url="${escapeHtml(item.noticia.url || '')}" src="${img || PLACEHOLDER_IMG}" onclick="abrirModalItem(${idx})" onerror="this.src='${PLACEHOLDER_IMG}'"/>
+        <div class="news-card-body" onclick="abrirModalItem(${idx})">
+          <div class="news-card-title">${escapeHtml(truncate(item.noticia.titulo, 110))}</div>
+          <div class="news-card-foot">
+            <span class="news-card-chip" style="background:${f.color};color:${textColor}">${escapeHtml(f.nombre)}</span>
+            ${item.noticia.url ? `<span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">↗ abrir</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  return `<div class="card-grid">${cards}</div>`;
+}
+
+// Vista "Compacta": lista densa en columnas tipo agregador de noticias
+// clásico (Drudge/Hacker News) — sin imágenes, muchos titulares por
+// pantalla. items puede traer opcionalmente `entidades` (Exterior/Filtros).
+function renderNewsCompact(items, opts) {
+  opts = opts || {};
+  const selKeys = selectionKeySet();
+  const rows = items.map(item => {
+    const idx = regPush(item);
+    const checked = selKeys.has(item.noticia.titulo);
+    const f = item.fuente;
+    const ents = (item.entidades || []).slice(0, 2);
+    const entsTxt = ents.length ? ` <span class="compact-ents">(${ents.map(escapeHtml).join(', ')})</span>` : '';
+    return `
+      <div class="news-row-compact" data-idx="${idx}">
+        <span class="compact-chk ${checked ? 'checked' : ''}" onclick="event.stopPropagation();toggleSeleccion(${idx}, this)">${checked ? '✓' : ''}</span>
+        <span class="compact-dot" style="background:${f.color}"></span>
+        <span class="compact-src" style="color:${f.color}" title="${escapeHtml(f.nombre)}">${escapeHtml(truncate(f.nombre, 13))}</span>
+        <span class="compact-title" onclick="abrirModalItem(${idx})">${escapeHtml(item.noticia.titulo)}${entsTxt}</span>
+      </div>`;
+  }).join('');
+  return `<div class="news-list-compact">${rows}</div>`;
+}
+
+
+
+function lazyLoadImages(container) {
+  const imgs = Array.from(container.querySelectorAll('img.news-card-img, img.list-row-img')).filter(im => im.dataset.url && im.src.startsWith('data:'));
+  const urls = [...new Set(imgs.map(im => im.dataset.url))].slice(0, 40);
+  if (!urls.length) return;
+  apiPost('/api/imagenes', {urls}).then(d => {
+    const images = d.images || {};
+    imgs.forEach(im => {
+      const u = images[im.dataset.url];
+      if (u) im.src = u;
+    });
+  }).catch(() => {});
+}
+
+// ── SELECCIÓN (checkbox en tarjetas) ────────────────────────────────
+function toggleSeleccion(idx, el) {
+  const item = regGet(idx);
+  const keys = selectionKeySet();
+  if (keys.has(item.noticia.titulo)) {
+    STATE.seleccion = STATE.seleccion.filter(s => s.noticia.titulo !== item.noticia.titulo);
+    if (el) { el.classList.remove('checked'); el.textContent = '+'; }
+  } else {
+    STATE.seleccion.push(item);
+    if (el) { el.classList.add('checked'); el.textContent = '✓'; }
+  }
+  actualizarSelFloat();
+}
+
+function actualizarSelFloat() {
+  const n = STATE.seleccion.length;
+  document.getElementById('selCount').textContent = n;
+  document.getElementById('selFloat').classList.toggle('visible', n > 0);
+}
+
+function limpiarSeleccion() {
+  STATE.seleccion = [];
+  actualizarSelFloat();
+  if (RENDERERS[STATE.activeTab]) RENDERERS[STATE.activeTab]();
+}
+
+function enviarSeleccionA(tab) {
+  setTab(tab);
+}
+
+async function agregarSeleccionACanasta() {
+  for (const item of STATE.seleccion) {
+    await agregarACanastaSilencioso(item.noticia.titulo, item.noticia.url, item.fuente);
+  }
+  limpiarSeleccion();
+  await cargarCanasta();
+  alert('Agregadas a la canasta.');
+}
+
+// ── CANASTA: agregar desde cualquier lado ───────────────────────────
+async function agregarACanastaSilencioso(titulo, url, fuente) {
+  try {
+    const d = await apiPost('/api/canasta/agregar', {titulo, url: url || null, fuente, scrape_cuerpo: true});
+    STATE.canasta = d.canasta;
+    actualizarBadgeCanasta();
+  } catch (e) { console.warn(e); }
+}
+async function agregarACanastaReg(idx) {
+  const item = regGet(idx);
+  await agregarACanastaSilencioso(item.titulo, item.url, item.fuente);
+  alert('Agregado a la canasta 🧺');
+}
+async function agregarItemACanasta(idx) {
+  const item = regGet(idx);
+  await agregarACanastaSilencioso(item.noticia.titulo, item.noticia.url, item.fuente);
+  alert('Agregado a la canasta 🧺');
+}
+async function cargarCanasta() {
+  try {
+    const d = await apiGet('/api/canasta');
+    STATE.canasta = d.canasta;
+    actualizarBadgeCanasta();
+  } catch (e) {}
+}
+
+// ── MODAL DE DETALLE ─────────────────────────────────────────────────
+function abrirModalItem(idx) {
+  const item = regGet(idx);
+  STATE.modalItem = {idx, item};
+  const f = item.fuente;
+  const img = item.noticia.imagen || '';
+  document.getElementById('modalBox').innerHTML = `
+    <button class="modal-close" onclick="cerrarModal()">✕</button>
+    <span class="chip" style="background:${f.color}">${escapeHtml(f.nombre)}</span>
+    <div class="modal-title">${escapeHtml(item.noticia.titulo)}</div>
+    <img class="modal-img" id="modalImg" data-url="${escapeHtml(item.noticia.url || '')}" src="${img || PLACEHOLDER_IMG}" onerror="this.src='${PLACEHOLDER_IMG}'"/>
+    <div class="modal-body" id="modalBody">${item.noticia.url ? '' : '(sin URL para leer el cuerpo)'}</div>
+    <div class="modal-actions">
+      ${item.noticia.url ? `<a class="modal-btn" href="${item.noticia.url}" target="_blank" rel="noopener">↗ Ver nota original</a>` : ''}
+      ${item.noticia.url ? `<button class="modal-btn alt" onclick="leerCuerpoModal()">📄 Leer cuerpo</button>` : ''}
+      <button class="modal-btn alt" onclick="agregarItemACanasta(${idx})">🧺 A canasta</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  if (!img && item.noticia.url) {
+    apiPost('/api/imagenes', {urls: [item.noticia.url]}).then(d => {
+      const u = (d.images || {})[item.noticia.url];
+      if (u) document.getElementById('modalImg').src = u;
+    }).catch(() => {});
+  }
+}
+function cerrarModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+async function leerCuerpoModal() {
+  const body = document.getElementById('modalBody');
+  const url = STATE.modalItem.item.noticia.url;
+  body.textContent = 'Leyendo…';
+  try {
+    const d = await apiPost('/api/scrape-cuerpo', {url});
+    body.textContent = d.cuerpo || '(no se pudo extraer el cuerpo de esta nota — puede requerir suscripción o tener un formato no soportado)';
+  } catch (e) {
+    body.textContent = 'Error: ' + e.message;
+  }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+// ═══════════════════════════════════════════════════════════════════════
+// NACIONALES / INTERNACIONALES / PRIMICIAS
+// ═══════════════════════════════════════════════════════════════════════
+function renderGrupoMedios(tabId, grupoKey, titulo, sub) {
+  const el = document.getElementById('tab-' + tabId);
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('📰', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  const grupo = STATE.fuentes[grupoKey] || [];
+  const activo = STATE.medioFiltro[tabId] || 'todas';
+  const totalTodas = grupo.reduce((a, f) => a + f.items.length, 0);
+
+  const railItems = [`<div class="medio-rail-item ${activo === 'todas' ? 'active' : ''}" onclick="setMedioFiltro('${tabId}','todas')">Todas <span class="medio-rail-count">${totalTodas}</span></div>`]
+    .concat(grupo.map(f => `<div class="medio-rail-item ${activo === f.id ? 'active' : ''}" onclick="setMedioFiltro('${tabId}','${f.id}')" style="${activo === f.id ? `border-left-color:${f.color}` : ''}"><span class="medio-rail-dot" style="background:${f.color}"></span>${escapeHtml(f.nombre)} <span class="medio-rail-count">${f.items.length}</span></div>`))
+    .join('');
+
+  let items = [];
+  grupo.forEach(f => {
+    if (activo !== 'todas' && f.id !== activo) return;
+    f.items.forEach(n => items.push({fuente: {id: f.id, nombre: f.nombre, color: f.color}, noticia: n}));
+  });
+
+  el.innerHTML = `
+    <div class="section-title">${titulo}</div>
+    <div class="section-sub">${sub}</div>
+    <div class="medio-layout">
+      <div class="medio-rail">${railItems}</div>
+      <div class="medio-content">${renderNewsGrid(items, {emptyMsg: 'Este medio no trajo noticias en la última actualización.'})}</div>
+    </div>
+  `;
+  lazyLoadImages(el);
+}
+function setMedioFiltro(tabId, medioId) {
+  STATE.medioFiltro[tabId] = medioId;
+  RENDERERS[tabId]();
+}
+
+RENDERERS['nac'] = () => renderGrupoMedios('nac', 'nacionales', '🇦🇷 Medios nacionales', 'Portadas de los medios deportivos argentinos monitoreados.');
+RENDERERS['int'] = () => renderGrupoMedios('int', 'internacionales', '🌍 Medios internacionales', 'Fútbol internacional: España, Italia, Inglaterra, Brasil y más.');
+RENDERERS['esp'] = () => renderGrupoMedios('esp', 'primicias', '📰 Primicias e instituciones', 'Periodistas de mercado, instituciones oficiales y agregadores temáticos (River, Boca, Selección, mercado de pases).');
+// ═══════════════════════════════════════════════════════════════════════
+// BUSCAR
+// ═══════════════════════════════════════════════════════════════════════
+function renderBuscar() {
+  const el = document.getElementById('tab-buscar');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('🔎', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral para poder buscar.');
+    return;
+  }
+  el.innerHTML = `
+    <div class="section-title">🔎 Buscar en todos los medios</div>
+    <div class="section-sub">Busca coincidencias de texto en los titulares ya cargados.</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input class="field" id="buscarInput" placeholder="ej: Messi, fichaje, River..." value="${escapeHtml(STATE.buscarQuery)}" style="flex:1" onkeydown="if(event.key==='Enter')ejecutarBusqueda()"/>
+      <select class="field" id="buscarAmbito" style="max-width:180px">
+        <option value="todas" ${STATE.buscarAmbito === 'todas' ? 'selected' : ''}>Todas las fuentes</option>
+        <option value="nacionales" ${STATE.buscarAmbito === 'nacionales' ? 'selected' : ''}>Solo nacionales</option>
+        <option value="internacionales" ${STATE.buscarAmbito === 'internacionales' ? 'selected' : ''}>Solo internacionales</option>
+      </select>
+      <button class="small-btn primary" onclick="ejecutarBusqueda()">Buscar</button>
+    </div>
+    <div id="buscarOut"></div>
+  `;
+  if (STATE.buscarResultados) pintarResultadosBusqueda();
+}
+RENDERERS['buscar'] = renderBuscar;
+
+async function ejecutarBusqueda() {
+  const q = document.getElementById('buscarInput').value.trim();
+  const ambito = document.getElementById('buscarAmbito').value;
+  STATE.buscarQuery = q; STATE.buscarAmbito = ambito;
+  const out = document.getElementById('buscarOut');
+  if (q.length < 3) { out.innerHTML = `<div class="empty-note">Escribí al menos 3 caracteres.</div>`; return; }
+  out.innerHTML = `<div class="empty-note">Buscando…</div>`;
+  try {
+    const d = await apiGet(`/api/buscar?q=${encodeURIComponent(q)}&ambito=${ambito}`);
+    STATE.buscarResultados = d;
+    pintarResultadosBusqueda();
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function pintarResultadosBusqueda() {
+  const d = STATE.buscarResultados;
+  const out = document.getElementById('buscarOut');
+  if (!out) return;
+  if (!d || !d.total) { out.innerHTML = `<div class="empty-note">Sin resultados para "${escapeHtml(STATE.buscarQuery)}".</div>`; return; }
+  let items = [];
+  d.resultados.forEach(grupo => grupo.items.forEach(n => items.push({fuente: grupo.fuente, noticia: n})));
+  out.innerHTML = `<div class="section-sub" style="margin-bottom:10px">${d.total} resultado(s) en ${d.resultados.length} medio(s)</div>` + renderNewsGrid(items);
+  lazyLoadImages(out);
+}
+// ═══════════════════════════════════════════════════════════════════════
+// IMPACTO ARGENTINA (notas del exterior relevantes)
+// ═══════════════════════════════════════════════════════════════════════
+async function renderExterior() {
+  const el = document.getElementById('tab-exterior');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('🌎', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  el.innerHTML = `
+    <div class="section-title">🌎 → 🇦🇷 Impacto Argentina</div>
+    <div class="section-sub">Lo que publica la prensa extranjera y toca de cerca al fútbol argentino.</div>
+    <div id="exteriorOut"><div class="empty-note">Cargando…</div></div>
+  `;
+  try {
+    const d = await apiGet('/api/notas-exterior');
+    STATE.exteriorNotas = d.notas;
+  } catch (e) {
+    document.getElementById('exteriorOut').innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  const items = STATE.exteriorNotas.map(n => ({fuente: n.fuente, noticia: {titulo: n.titulo, url: n.url, imagen: ''}, entidades: n.entidades}));
+  const out = document.getElementById('exteriorOut');
+  out.innerHTML = renderNewsGridConEntidades(items);
+  lazyLoadImages(out);
+}
+RENDERERS['exterior'] = renderExterior;
+
+function renderNewsGridConEntidades(items) {
+  if (!items.length) return `<div class="empty-note">No se detectaron notas del exterior con impacto directo en Argentina en esta pasada.</div>`;
+  if (STATE.vistaModo === 'compact') return renderNewsCompact(items);
+  const selKeys = selectionKeySet();
+  const cards = items.map(item => {
+    const idx = regPush({fuente: item.fuente, noticia: item.noticia});
+    const f = item.fuente;
+    const luma = colorLuma(f.color);
+    const textColor = luma > 190 ? '#111' : '#fff';
+    const ents = (item.entidades || []).slice(0, 4).map(e => `<span class="chip outline">${escapeHtml(e)}</span>`).join(' ');
+    return `
+      <div class="news-card" data-idx="${idx}">
+        <div class="news-card-check ${selKeys.has(item.noticia.titulo) ? 'checked' : ''}" onclick="event.stopPropagation();toggleSeleccion(${idx}, this)">${selKeys.has(item.noticia.titulo) ? '✓' : '+'}</div>
+        <div class="news-card-body" onclick="abrirModalItem(${idx})" style="padding-top:13px">
+          <div class="news-card-title">${escapeHtml(truncate(item.noticia.titulo, 110))}</div>
+          <div class="news-card-foot" style="margin-bottom:6px">
+            <span class="news-card-chip" style="background:${f.color};color:${textColor}">${escapeHtml(f.nombre)}</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">${ents}</div>
+        </div>
+      </div>`;
+  }).join('');
+  return `<div class="card-grid">${cards}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FILTROS TEMÁTICOS
+// ═══════════════════════════════════════════════════════════════════════
+async function renderFiltros() {
+  const el = document.getElementById('tab-filtros');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('🎯', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  if (!Object.keys(STATE.filtrosTematicos).length) {
+    try { STATE.filtrosTematicos = await apiGet('/api/filtros-tematicos'); } catch (e) {}
+  }
+  const chips = Object.entries(STATE.filtrosTematicos).map(([fid, conf]) =>
+    `<button class="filter-btn ${STATE.filtroActivo === fid ? 'active' : ''}" onclick="aplicarFiltroTematico('${fid}')">${conf.titulo}</button>`
+  ).join('');
+  const descActivo = STATE.filtroActivo ? STATE.filtrosTematicos[STATE.filtroActivo]?.desc : '';
+
+  el.innerHTML = `
+    <div class="section-title">🎯 Filtros temáticos</div>
+    <div class="section-sub">Rebanadas del panorama por tema, sin usar IA.</div>
+    <div class="filter-row">${chips}</div>
+    ${descActivo ? `<div class="section-sub" style="margin-top:-8px">${escapeHtml(descActivo)}</div>` : ''}
+    <div style="display:flex;gap:8px;margin:14px 0;">
+      <input class="field" id="filtroCustomInput" placeholder="o escribí tus propias palabras clave, separadas por coma..." value="${escapeHtml(STATE.filtroCustomTxt)}" style="flex:1" onkeydown="if(event.key==='Enter')aplicarFiltroCustom()"/>
+      <button class="small-btn" onclick="aplicarFiltroCustom()">Filtrar</button>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" class="toggle-sw" id="filtroSoloArChk" ${STATE.filtroSoloAr ? 'checked' : ''} onchange="STATE.filtroSoloAr=this.checked; reAplicarFiltro();"/>
+      <span class="toggle-lbl">Solo lo relevante para Argentina</span>
+    </div>
+    <div id="filtroOut"></div>
+  `;
+  if (STATE.filtroResultados) pintarFiltroResultados();
+}
+RENDERERS['filtros'] = renderFiltros;
+
+async function aplicarFiltroTematico(fid) {
+  STATE.filtroActivo = fid; STATE.filtroCustomTxt = '';
+  document.querySelectorAll('#tab-filtros .filter-btn').forEach(b => b.classList.remove('active'));
+  const out = document.getElementById('filtroOut');
+  if (!out) return;
+  out.innerHTML = `<div class="empty-note">Filtrando…</div>`;
+  try {
+    const d = await apiGet(`/api/filtrar?filtro_id=${fid}&solo_ar=${STATE.filtroSoloAr}`);
+    STATE.filtroResultados = d.notas;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  renderFiltros();
+}
+async function aplicarFiltroCustom() {
+  const txt = document.getElementById('filtroCustomInput').value.trim();
+  if (!txt) return;
+  STATE.filtroCustomTxt = txt; STATE.filtroActivo = null;
+  const keywords = txt.split(',').map(s => s.trim()).filter(Boolean);
+  const out = document.getElementById('filtroOut');
+  if (!out) return;
+  out.innerHTML = `<div class="empty-note">Filtrando…</div>`;
+  try {
+    const d = await apiPost('/api/filtrar-custom', {keywords, solo_ar: STATE.filtroSoloAr});
+    STATE.filtroResultados = d.notas;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  pintarFiltroResultados();
+}
+function reAplicarFiltro() {
+  if (STATE.filtroActivo) aplicarFiltroTematico(STATE.filtroActivo);
+  else if (STATE.filtroCustomTxt) aplicarFiltroCustom();
+}
+function pintarFiltroResultados() {
+  const out = document.getElementById('filtroOut');
+  if (!out) return;
+  const notas = STATE.filtroResultados || [];
+  const items = notas.map(n => ({fuente: n.fuente, noticia: {titulo: n.titulo, url: n.url, imagen: ''}, entidades: n.entidades}));
+  out.innerHTML = `<div class="section-sub" style="margin-bottom:10px">${items.length} nota(s) encontradas</div>` + renderNewsGridConEntidades(items);
+  lazyLoadImages(out);
+}
+// ═══════════════════════════════════════════════════════════════════════
+// OLÉ VS TODOS
+// ═══════════════════════════════════════════════════════════════════════
+function renderOle() {
+  const el = document.getElementById('tab-ole');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('🟢', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  const o = STATE.ole;
+  const subtabs = [
+    ['exclusivos_ole', `Exclusivos de Olé (${o.exclusivos_ole.length})`],
+    ['faltantes_en_ole', `Faltantes en Olé (${o.faltantes_en_ole.length})`],
+    ['cubiertos_por_ambos', `Cubiertos por ambos (${o.cubiertos_por_ambos.length})`],
+    ['exclusivos_todos', 'Exclusivos — todos los medios'],
+  ];
+  el.innerHTML = `
+    <div class="section-title">🟢 Olé vs. el resto de los medios</div>
+    <div class="section-sub">Qué tiene Olé que nadie más, qué le falta, y dónde compite cara a cara.</div>
+    <div class="ole-metrics">
+      <div class="ole-metric"><div class="ole-metric-num">${o.exclusivos_ole.length}</div><div class="ole-metric-label">Exclusivos Olé</div></div>
+      <div class="ole-metric"><div class="ole-metric-num">${o.faltantes_en_ole.length}</div><div class="ole-metric-label">Faltantes en Olé</div></div>
+      <div class="ole-metric"><div class="ole-metric-num">${o.cubiertos_por_ambos.length}</div><div class="ole-metric-label">Cubiertos por ambos</div></div>
+    </div>
+    <div class="ole-sub-tabs">${subtabs.map(([id, label]) => `<button class="ole-sub-btn ${STATE.oleSubTab === id ? 'active' : ''}" onclick="setOleSubTab('${id}')">${label}</button>`).join('')}</div>
+    <div id="oleSubOut"></div>
+  `;
+  pintarOleSubTab();
+}
+RENDERERS['ole'] = renderOle;
+
+function setOleSubTab(id) { STATE.oleSubTab = id; renderOle(); }
+
+async function pintarOleSubTab() {
+  const out = document.getElementById('oleSubOut');
+  const o = STATE.ole;
+  if (STATE.oleSubTab === 'exclusivos_ole') {
+    const items = o.exclusivos_ole.map(n => ({fuente: {id: 'ole', nombre: 'Olé', color: '#00a846'}, noticia: n}));
+    out.innerHTML = renderNewsGrid(items, {emptyMsg: 'Olé no tiene notas exclusivas en esta pasada.'});
+  } else if (STATE.oleSubTab === 'faltantes_en_ole') {
+    const items = o.faltantes_en_ole.map(f => ({fuente: {id: f.fuente_id, nombre: f.fuente_nombre, color: f.fuente_color}, noticia: {titulo: f.titulo, url: f.url, imagen: ''}}));
+    out.innerHTML = renderNewsGrid(items, {emptyMsg: 'No hay temas destacados que le falten a Olé ahora mismo.'});
+  } else if (STATE.oleSubTab === 'cubiertos_por_ambos') {
+    if (!o.cubiertos_por_ambos.length) { out.innerHTML = `<div class="empty-note">No hay coincidencias detectadas entre Olé y la competencia en esta pasada.</div>`; return; }
+    out.innerHTML = o.cubiertos_por_ambos.map(c => `
+      <div class="list-row" style="flex-direction:column;align-items:stretch">
+        <div class="list-row-title">${c.noticia_ole.url ? `<a href="${c.noticia_ole.url}" target="_blank">${escapeHtml(c.noticia_ole.titulo)}</a>` : escapeHtml(c.noticia_ole.titulo)}</div>
+        <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;">
+          ${c.competencia.map(comp => `<div class="tend-sub-item">— [${escapeHtml(comp.fuente_id)}] ${comp.noticia.url ? `<a href="${comp.noticia.url}" target="_blank">${escapeHtml(comp.noticia.titulo)}</a>` : escapeHtml(comp.noticia.titulo)}</div>`).join('')}
+        </div>
+      </div>`).join('');
+  } else if (STATE.oleSubTab === 'exclusivos_todos') {
+    out.innerHTML = `<div class="empty-note">Cargando…</div>`;
+    if (!STATE.exclusivosTodos) {
+      try {
+        const d = await apiGet('/api/exclusivos-todos');
+        STATE.exclusivosTodos = d.exclusivos;
+      } catch (e) { out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`; return; }
+    }
+    const items = STATE.exclusivosTodos.map(e => ({fuente: e.fuente, noticia: e.noticia}));
+    out.innerHTML = renderNewsGrid(items, {emptyMsg: 'No se detectaron exclusivos en ningún medio.'});
+  }
+  lazyLoadImages(out);
+}
+// ═══════════════════════════════════════════════════════════════════════
+// TENDENCIAS
+// ═══════════════════════════════════════════════════════════════════════
+function renderTend() {
+  const el = document.getElementById('tab-tend');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('📊', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  el.innerHTML = `
+    <div class="section-title">📊 Tendencias del panorama</div>
+    <div class="section-sub">Temas agrupados por cuántos medios los están cubriendo ahora mismo.</div>
+
+    <div class="nube-tabs">
+      <button class="nube-tab-btn ${STATE.nubeTab === 'nac' ? 'active' : ''}" onclick="setNubeTab('nac')">🇦🇷 Nube nacional</button>
+      <button class="nube-tab-btn ${STATE.nubeTab === 'int' ? 'active' : ''}" onclick="setNubeTab('int')">🌍 Nube internacional</button>
+    </div>
+    <div class="nube-container" id="nubeContainer"></div>
+
+    <div class="section-title" style="font-size:1rem;margin-top:22px">🏆 Ranking de entidades</div>
+    <div id="rankingOut"><div class="empty-note">Cargando…</div></div>
+
+    <div class="section-title" style="font-size:1rem;margin-top:22px">Temas ordenados por volumen</div>
+    <div class="filter-row">
+      <button class="filter-btn ${STATE.tendFiltro === 'todas' ? 'active' : ''}" onclick="setTendFiltro('todas')">Todas</button>
+      <button class="filter-btn ${STATE.tendFiltro === 'ole' ? 'active' : ''}" onclick="setTendFiltro('ole')">Con Olé</button>
+      <button class="filter-btn ${STATE.tendFiltro === 'sinole' ? 'active' : ''}" onclick="setTendFiltro('sinole')">Sin Olé ⚠️</button>
+      <button class="filter-btn ${STATE.tendFiltro === 'hot' ? 'active' : ''}" onclick="setTendFiltro('hot')">🔥 Hot (≥20%)</button>
+    </div>
+    <div id="tendListOut"></div>
+  `;
+  pintarNube();
+  pintarTendList();
+  cargarRanking();
+}
+RENDERERS['tend'] = renderTend;
+
+function setNubeTab(t) { STATE.nubeTab = t; document.querySelectorAll('.nube-tab-btn').forEach((b, i) => b.classList.toggle('active', (i === 0) === (t === 'nac'))); pintarNube(); }
+function pintarNube() {
+  const words = STATE.nubeTab === 'nac' ? STATE.nubeNac : STATE.nubeInt;
+  const cont = document.getElementById('nubeContainer');
+  if (!words || !words.length) { cont.innerHTML = `<div class="empty-note" style="padding:20px">Sin datos suficientes para la nube.</div>`; return; }
+  cont.innerHTML = words.map(w => `<span class="nube-word" style="left:${w.x}%;top:${w.y}%;font-size:${w.size}px;color:${w.color};font-weight:${w.weight};opacity:${w.opacity}">${escapeHtml(w.word)}</span>`).join('');
+}
+
+function setTendFiltro(f) { STATE.tendFiltro = f; pintarTendList(); }
+function pintarTendList() {
+  const out = document.getElementById('tendListOut');
+  let tend = STATE.tendencias;
+  if (STATE.tendFiltro === 'ole') tend = tend.filter(t => t.tiene_ole);
+  else if (STATE.tendFiltro === 'sinole') tend = tend.filter(t => !t.tiene_ole);
+  else if (STATE.tendFiltro === 'hot') tend = tend.filter(t => t.cant_medios / Math.max(STATE.totalMedios, 1) >= 0.20);
+
+  if (!tend.length) { out.innerHTML = `<div class="empty-note">Sin temas para este filtro.</div>`; return; }
+  out.innerHTML = tend.map((c, i) => {
+    const pct = Math.min(100, Math.round((c.cant_medios / Math.max(STATE.totalMedios, 1)) * 100));
+    const barColor = c.tiene_ole ? '#00a846' : '#c0392b';
+    return `
+      <div class="tend-item" style="border-left-color:${barColor}">
+        <div class="tend-header">
+          <span class="tend-count">${c.cant_medios} medios</span>
+          <div class="tend-bar-wrap"><div class="tend-bar" style="width:${pct}%;background:${barColor}"></div></div>
+          <span class="chip outline">${pct}%</span>
+          ${c.tiene_ole ? `<span class="chip" style="background:#00a846">OLÉ</span>` : `<span class="chip" style="background:#c0392b">SIN OLÉ</span>`}
+        </div>
+        <div class="tend-title">${c.url ? `<a href="${c.url}" target="_blank">${escapeHtml(c.titulo)}</a>` : escapeHtml(c.titulo)}</div>
+        <div style="font-family:var(--mono);font-size:.62rem;color:var(--muted)">${c.nac} nac / ${c.intl} int</div>
+        <button class="tend-expand-btn" onclick="toggleTendSub(${i})">Ver cómo lo titularon</button>
+        <div class="tend-subnoticias" id="tendSub-${i}">
+          ${c.noticias.map(n => `<div class="tend-sub-item">— [${escapeHtml(n.fuente.nombre)}] ${n.url ? `<a href="${n.url}" target="_blank">${escapeHtml(n.titulo)}</a>` : escapeHtml(n.titulo)}</div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+function toggleTendSub(i) { document.getElementById('tendSub-' + i).classList.toggle('open'); }
+
+async function cargarRanking() {
+  const out = document.getElementById('rankingOut');
+  try {
+    const d = await apiGet('/api/ranking-entidades');
+    STATE.rankingEntidades = d.ranking;
+  } catch (e) { out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`; return; }
+  const top = STATE.rankingEntidades.slice(0, 20);
+  if (!top.length) { out.innerHTML = `<div class="empty-note">Sin entidades detectadas.</div>`; return; }
+  const max = top[0].menciones || 1;
+  out.innerHTML = top.map(r => `
+    <div class="rank-row">
+      <div class="rank-name">${escapeHtml(r.entidad)} ${r.tiene_ole ? '<span style="color:#00a846">●</span>' : ''}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round((r.menciones / max) * 100)}%"></div></div>
+      <div class="rank-num">${r.menciones} menc. / ${r.medios} medios</div>
+    </div>`).join('');
+}
+// ═══════════════════════════════════════════════════════════════════════
+// ANÁLISIS IA
+// ═══════════════════════════════════════════════════════════════════════
+function renderIA() {
+  const el = document.getElementById('tab-ia');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('✦', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  const subtabs = [['general', '✦ Análisis General'], ['partes', '📰 Partes Nac/Int'], ['informe', '🟢 Informe Olé'], ['exclusivos', '📋 Exclusivos (todos)']];
+  el.innerHTML = `
+    <div class="section-title">✦ Análisis con IA</div>
+    <div class="section-sub">Lectura editorial del panorama, generada por Claude.</div>
+    <div class="ole-sub-tabs">${subtabs.map(([id, label]) => `<button class="ole-sub-btn ${STATE.iaSubTab === id ? 'active' : ''}" onclick="setIaSubTab('${id}')">${label}</button>`).join('')}</div>
+    <div id="iaSubOut"></div>
+  `;
+  pintarIaSubTab();
+}
+RENDERERS['ia'] = renderIA;
+
+function setIaSubTab(id) { STATE.iaSubTab = id; renderIA(); }
+
+async function pintarIaSubTab() {
+  const out = document.getElementById('iaSubOut');
+  if (STATE.iaSubTab === 'general') {
+    out.innerHTML = `
+      <button class="small-btn primary" onclick="generarAnalisisGeneral()">✦ Generar análisis general (30 temas + perlitas)</button>
+      <div id="iaGeneralOut" style="margin-top:14px">${STATE.iaResultGeneral ? `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(STATE.iaResultGeneral)}</div>` : ''}</div>
+    `;
+  } else if (STATE.iaSubTab === 'partes') {
+    out.innerHTML = `
+      <div class="section-sub">Análisis del día separado por local e internacional, con la misma calidad que el Análisis General.</div>
+      <div class="partes-grid">
+        <div class="partes-col">
+          <div class="wizard-step-label">🇦🇷 Nacional</div>
+          <button class="small-btn primary" onclick="generarParteNac()">Generar parte nacional</button>
+          <div id="parteNacOut" style="margin-top:12px">${STATE.parteNacResult ? `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(STATE.parteNacResult)}</div>` : `<div class="empty-note">Generá el parte nacional con el botón de arriba.</div>`}</div>
+        </div>
+        <div class="partes-col">
+          <div class="wizard-step-label">🌍 Internacional</div>
+          <button class="small-btn primary" onclick="generarParteInt()">Generar parte internacional</button>
+          <div id="parteIntOut" style="margin-top:12px">${STATE.parteIntResult ? `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(STATE.parteIntResult)}</div>` : `<div class="empty-note">Generá el parte internacional con el botón de arriba.</div>`}</div>
+        </div>
+      </div>
+    `;
+  } else if (STATE.iaSubTab === 'informe') {
+    out.innerHTML = `
+      <div class="section-sub">Opcional: pedile a Claude que enfoque el informe en temas puntuales (uno por línea o separados por coma).</div>
+      <textarea class="field" id="iaTemasEditor" placeholder="ej: lesión de Messi, mercado de pases de River...">${escapeHtml(STATE.iaTemasEditor)}</textarea>
+      <button class="small-btn primary" style="margin-top:10px" onclick="generarInformeOle()">🟢 Generar informe Olé</button>
+      <div id="iaInformeOut" style="margin-top:14px">${STATE.iaResultInforme ? `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(STATE.iaResultInforme)}</div>` : ''}</div>
+    `;
+  } else if (STATE.iaSubTab === 'exclusivos') {
+    out.innerHTML = `<div class="empty-note">Cargando…</div>`;
+    if (!STATE.exclusivosTodos) {
+      try {
+        const d = await apiGet('/api/exclusivos-todos');
+        STATE.exclusivosTodos = d.exclusivos;
+      } catch (e) { out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`; return; }
+    }
+    const items = STATE.exclusivosTodos.map(e => ({fuente: e.fuente, noticia: e.noticia}));
+    out.innerHTML = renderNewsGrid(items, {emptyMsg: 'No se detectaron exclusivos en ningún medio.'});
+    lazyLoadImages(out);
+  }
+}
+
+async function generarAnalisisGeneral() {
+  const key = requireApiKey(); if (!key) return;
+  const out = document.getElementById('iaGeneralOut');
+  out.innerHTML = `<div class="empty-note">Analizando 30 temas<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span> (puede tardar un minuto)</div>`;
+  try {
+    const d = await apiPost('/api/analisis-general', {api_key: key});
+    STATE.iaResultGeneral = d.resultado;
+    out.innerHTML = `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(d.resultado)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function generarParteNac() {
+  const key = requireApiKey(); if (!key) return;
+  const out = document.getElementById('parteNacOut');
+  out.innerHTML = `<div class="empty-note">Generando parte nacional<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  try {
+    const d = await apiPost('/api/parte-nacional', {api_key: key});
+    STATE.parteNacResult = d.resultado;
+    out.innerHTML = `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(d.resultado)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function generarParteInt() {
+  const key = requireApiKey(); if (!key) return;
+  const out = document.getElementById('parteIntOut');
+  out.innerHTML = `<div class="empty-note">Generando parte internacional<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  try {
+    const d = await apiPost('/api/parte-internacional', {api_key: key});
+    STATE.parteIntResult = d.resultado;
+    out.innerHTML = `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(d.resultado)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function generarInformeOle() {
+  const key = requireApiKey(); if (!key) return;
+  const out = document.getElementById('iaInformeOut');
+  out.innerHTML = `<div class="empty-note">Generando informe<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  try {
+    const d = await apiPost('/api/informe-ole', {api_key: key, temas_editor: STATE.iaTemasEditor});
+    STATE.iaResultInforme = d.resultado;
+    out.innerHTML = `<div class="ai-result" style="background:white;border:1px solid var(--border);padding:16px 18px;color:#222">${escapeHtml(d.resultado)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+// ═══════════════════════════════════════════════════════════════════════
+// NOTA RÁPIDA
+// ═══════════════════════════════════════════════════════════════════════
+const ESTILOS_NOTA = ['Informativa', 'Analítica', 'Urgente/Flash'];
+const TIPOS_NOTA = ['Nota completa', 'Solo titulares alternativos', 'Esqueleto + ángulos'];
+
+function renderNota() {
+  const el = document.getElementById('tab-nota');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('✍️', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  el.innerHTML = `
+    <div class="section-title">✍️ Nota Rápida</div>
+    <div class="section-sub">Elegí titulares (desde cualquier pestaña, con el botón + de las tarjetas) y generá una nota con IA.</div>
+
+    <div class="wizard-step">
+      <div class="wizard-step-label">1 · Titulares seleccionados (${STATE.seleccion.length})</div>
+      <div id="notaSeleccionadosOut">${renderNotaSeleccionados()}</div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input class="field" id="notaBuscarInput" placeholder="Buscar más titulares para agregar..." value="${escapeHtml(STATE.notaBuscarQ)}" style="flex:1" onkeydown="if(event.key==='Enter')buscarParaNota()"/>
+        <button class="small-btn" onclick="buscarParaNota()">Buscar</button>
+      </div>
+      <div id="notaBuscarOut"></div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="wizard-step-label">2 · Tema (opcional — si lo dejás vacío, se usa el primer titular)</div>
+      <input class="field" id="notaTemaInput" placeholder="ej: La lesión de Messi" value="${escapeHtml(STATE.notaTema)}"/>
+    </div>
+
+    <div class="wizard-step">
+      <div class="wizard-step-label">3 · Estilo</div>
+      <div class="wizard-radio-grid">${ESTILOS_NOTA.map(e => `<button class="wizard-radio ${STATE.notaEstilo === e ? 'active' : ''}" onclick="setNotaEstilo('${e}')">${e}</button>`).join('')}</div>
+      <div class="wizard-step-label">Entregable</div>
+      <div class="wizard-radio-grid">${TIPOS_NOTA.map(t => `<button class="wizard-radio ${STATE.notaTipo === t ? 'active' : ''}" onclick="setNotaTipo('${t}')">${t}</button>`).join('')}</div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="wizard-step-label">4 · Contexto adicional (opcional)</div>
+      <textarea class="field" id="notaContextoInput" placeholder="Cualquier dato que quieras que la IA use sin verificar contra las fuentes...">${escapeHtml(STATE.notaContexto)}</textarea>
+    </div>
+
+    <button class="scrape-btn" style="max-width:320px" onclick="generarNotaRapida()">✦ Generar nota</button>
+    <div id="notaOut" style="margin-top:18px"></div>
+  `;
+  if (STATE.notaResultado) pintarNotaResultado();
+}
+RENDERERS['nota'] = renderNota;
+
+function renderNotaSeleccionados() {
+  if (!STATE.seleccion.length) return `<div class="empty-note">Todavía no seleccionaste ningún titular. Usá el botón + en cualquier tarjeta.</div>`;
+  return STATE.seleccion.map((item, i) => `
+    <div class="canasta-item">
+      <div class="canasta-item-body">
+        <div class="canasta-item-title">${escapeHtml(item.noticia.titulo)}</div>
+        <div class="canasta-item-meta">${escapeHtml(item.fuente.nombre)}</div>
+      </div>
+      <button class="mini-btn" onclick="quitarDeSeleccion(${i})">Quitar</button>
+    </div>`).join('');
+}
+function quitarDeSeleccion(i) {
+  STATE.seleccion.splice(i, 1);
+  actualizarSelFloat();
+  document.getElementById('notaSeleccionadosOut').innerHTML = renderNotaSeleccionados();
+}
+function setNotaEstilo(e) { STATE.notaEstilo = e; renderNota(); }
+function setNotaTipo(t) { STATE.notaTipo = t; renderNota(); }
+
+async function buscarParaNota() {
+  const q = document.getElementById('notaBuscarInput').value.trim();
+  STATE.notaBuscarQ = q;
+  const out = document.getElementById('notaBuscarOut');
+  if (q.length < 3) { out.innerHTML = ''; return; }
+  out.innerHTML = `<div class="empty-note">Buscando…</div>`;
+  try {
+    const d = await apiGet(`/api/buscar?q=${encodeURIComponent(q)}&ambito=todas`);
+    let items = [];
+    d.resultados.forEach(g => g.items.forEach(n => items.push({fuente: g.fuente, noticia: n})));
+    if (!items.length) { out.innerHTML = `<div class="empty-note">Sin resultados.</div>`; return; }
+    out.innerHTML = items.slice(0, 12).map(item => {
+      const idx = regPush(item);
+      return `<div class="canasta-item"><div class="canasta-item-body"><div class="canasta-item-title">${escapeHtml(item.noticia.titulo)}</div><div class="canasta-item-meta">${escapeHtml(item.fuente.nombre)}</div></div><button class="mini-btn" onclick="agregarBusquedaANota(${idx})">+ Agregar</button></div>`;
+    }).join('');
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+function agregarBusquedaANota(idx) {
+  const item = regGet(idx);
+  if (!STATE.seleccion.some(s => s.noticia.titulo === item.noticia.titulo)) STATE.seleccion.push(item);
+  actualizarSelFloat();
+  document.getElementById('notaSeleccionadosOut').innerHTML = renderNotaSeleccionados();
+}
+
+async function generarNotaRapida() {
+  const key = requireApiKey(); if (!key) return;
+  STATE.notaTema = document.getElementById('notaTemaInput').value;
+  STATE.notaContexto = document.getElementById('notaContextoInput').value;
+  const out = document.getElementById('notaOut');
+  out.innerHTML = `<div class="empty-note">Redactando<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span> (leyendo el cuerpo de las notas seleccionadas — puede tardar)</div>`;
+  const titulares = STATE.seleccion.map(s => ({fuente: s.fuente, noticia: {titulo: s.noticia.titulo, url: s.noticia.url || null}}));
+  try {
+    const d = await apiPost('/api/nota-rapida', {api_key: key, tema: STATE.notaTema, titulares, estilo: STATE.notaEstilo, tipo: STATE.notaTipo, contexto_extra: STATE.notaContexto});
+    STATE.notaResultado = d;
+    pintarNotaResultado();
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+function pintarNotaResultado() {
+  const out = document.getElementById('notaOut');
+  const d = STATE.notaResultado;
+  out.innerHTML = `
+    <div class="section-sub">Modo: ${escapeHtml(d.modo)} (${d.ok_count}/${d.total} fuentes con texto completo)</div>
+    <textarea class="ai-textarea-copy" id="notaResultTxt" readonly>${escapeHtml(d.resultado)}</textarea>
+    <button class="ai-copy-btn" onclick="copiarTexto('notaResultTxt')">📋 Copiar</button>
+  `;
+}
+function copiarTexto(id) {
+  const el = document.getElementById(id);
+  el.select();
+  document.execCommand('copy');
+}
+// ═══════════════════════════════════════════════════════════════════════
+// TONO EDITORIAL
+// ═══════════════════════════════════════════════════════════════════════
+const TONO_COLORES = {positivo: '#1e8449', negativo: '#c0392b', neutro: '#7a7060', alarmista: '#d68910', expectante: '#2c4a7c'};
+
+function renderSent() {
+  const el = document.getElementById('tab-sent');
+  if (!STATE.cargado) {
+    el.innerHTML = emptyState('🎭', 'Todavía no actualizaste las fuentes', 'Apretá "Actualizar fuentes" en la barra lateral.');
+    return;
+  }
+  el.innerHTML = `
+    <div class="section-title">🎭 Tono editorial</div>
+    <div class="section-sub">Buscá un tema y analizá cómo lo está tratando cada medio (positivo, negativo, alarmista...).</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input class="field" id="sentQueryInput" placeholder="ej: la lesión de Messi, el arbitraje..." value="${escapeHtml(STATE.sentQuery)}" style="flex:1" onkeydown="if(event.key==='Enter')analizarTonoPorQuery()"/>
+      <button class="small-btn primary" onclick="analizarTonoPorQuery()">Buscar y analizar</button>
+    </div>
+    ${STATE.seleccion.length ? `<button class="small-btn" onclick="analizarTonoDeSeleccion()">🎭 Analizar mis ${STATE.seleccion.length} titulares seleccionados</button>` : ''}
+    <div id="sentOut" style="margin-top:16px">${STATE.sentResultado ? '' : ''}</div>
+  `;
+  if (STATE.sentResultado) pintarSentResultado();
+}
+RENDERERS['sent'] = renderSent;
+
+async function analizarTonoPorQuery() {
+  const key = requireApiKey(); if (!key) return;
+  const q = document.getElementById('sentQueryInput').value.trim();
+  STATE.sentQuery = q;
+  if (q.length < 3) { alert('Escribí al menos 3 caracteres para buscar.'); return; }
+  const out = document.getElementById('sentOut');
+  out.innerHTML = `<div class="empty-note">Buscando titulares…</div>`;
+  let titulares;
+  try {
+    const b = await apiGet(`/api/buscar?q=${encodeURIComponent(q)}&ambito=todas`);
+    titulares = [];
+    b.resultados.forEach(g => g.items.forEach(n => titulares.push({fuente: g.fuente, noticia: {titulo: n.titulo, url: n.url || null}})));
+  } catch (e) { out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`; return; }
+  if (!titulares.length) { out.innerHTML = `<div class="empty-note">No se encontraron titulares sobre "${escapeHtml(q)}".</div>`; return; }
+  await ejecutarAnalisisTono(q, titulares, key);
+}
+
+async function analizarTonoDeSeleccion() {
+  const key = requireApiKey(); if (!key) return;
+  const titulares = STATE.seleccion.map(s => ({fuente: s.fuente, noticia: {titulo: s.noticia.titulo, url: s.noticia.url || null}}));
+  const q = STATE.sentQuery || titulares[0].noticia.titulo;
+  await ejecutarAnalisisTono(q, titulares, key);
+}
+
+async function ejecutarAnalisisTono(query, titulares, key) {
+  const out = document.getElementById('sentOut');
+  out.innerHTML = `<div class="empty-note">Analizando tono de ${titulares.length} titulares<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  try {
+    const d = await apiPost('/api/tono-editorial', {api_key: key, query, titulares: titulares.slice(0, 40)});
+    STATE.sentResultado = d.resultado;
+    pintarSentResultado();
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function pintarSentResultado() {
+  const out = document.getElementById('sentOut');
+  const r = STATE.sentResultado;
+  const dist = r.distribucion || {};
+  const total = Object.values(dist).reduce((a, b) => a + b, 0) || 1;
+  const segs = Object.entries(dist).filter(([, v]) => v > 0).map(([k, v]) =>
+    `<div class="tono-dist-seg" style="width:${(v / total) * 100}%;background:${TONO_COLORES[k] || '#888'}">${k} ${v}</div>`
+  ).join('');
+  out.innerHTML = `
+    <div class="section-sub" style="font-size:.85rem;color:#222;margin-bottom:10px">${escapeHtml(r.resumen || '')}</div>
+    <div class="tono-dist">${segs}</div>
+    ${(r.por_medio || []).map(p => `
+      <div class="tono-row">
+        <div class="tono-medio" style="color:${TONO_COLORES[p.tono] || '#888'}">${escapeHtml((p.tono || '').toUpperCase())}</div>
+        <div class="tono-body">
+          <div class="tono-titular">[${escapeHtml(p.medio)}] ${escapeHtml(p.titular)}</div>
+          <div class="tono-razon">${escapeHtml(p.razon || '')}</div>
+        </div>
+      </div>`).join('')}
+    ${(r.patrones || []).length ? `<div class="section-title" style="font-size:.95rem;margin-top:18px">Patrones detectados</div>` + r.patrones.map(p => `<div class="tend-sub-item">— ${escapeHtml(p)}</div>`).join('') : ''}
+  `;
+}
+// ═══════════════════════════════════════════════════════════════════════
+// CANASTA
+// ═══════════════════════════════════════════════════════════════════════
+function renderCanasta() {
+  const el = document.getElementById('tab-canasta');
+  el.innerHTML = `
+    <div class="section-title">🧺 Canasta de notas</div>
+    <div class="section-sub">Juntá titulares de distintas pestañas y generá una sola nota con todo el material.</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="small-btn" onclick="exportarCanasta()">📋 Exportar como texto</button>
+      <button class="small-btn" onclick="vaciarCanasta()">🗑 Vaciar canasta</button>
+    </div>
+    <div id="canastaListOut">${renderCanastaLista()}</div>
+
+    ${STATE.canasta.length ? `
+    <div class="wizard-step" style="margin-top:18px">
+      <div class="wizard-step-label">Generar nota desde la canasta</div>
+      <input class="field" id="canastaTemaInput" placeholder="Tema (opcional)" value="${escapeHtml(STATE.canastaTema)}" style="margin-bottom:10px"/>
+      <div class="wizard-radio-grid">${ESTILOS_NOTA.map(e => `<button class="wizard-radio ${STATE.canastaEstilo === e ? 'active' : ''}" onclick="setCanastaEstilo('${e}')">${e}</button>`).join('')}</div>
+      <div class="wizard-radio-grid">${TIPOS_NOTA.map(t => `<button class="wizard-radio ${STATE.canastaTipo === t ? 'active' : ''}" onclick="setCanastaTipo('${t}')">${t}</button>`).join('')}</div>
+      <textarea class="field" id="canastaContextoInput" placeholder="Contexto adicional (opcional)" style="margin-top:10px">${escapeHtml(STATE.canastaContexto)}</textarea>
+      <button class="scrape-btn" style="max-width:280px;margin-top:12px" onclick="generarNotaCanasta()">✦ Generar nota</button>
+      <div id="canastaResultOut" style="margin-top:14px"></div>
+    </div>` : ''}
+  `;
+  if (STATE.canastaResultado) pintarCanastaResultado();
+}
+RENDERERS['canasta'] = renderCanasta;
+
+function renderCanastaLista() {
+  if (!STATE.canasta.length) return `<div class="empty-note">La canasta está vacía. Agregá notas desde cualquier pestaña con el botón 🧺.</div>`;
+  return STATE.canasta.map((item, i) => {
+    const chars = (item.cuerpo || '').length;
+    const metaTxt = chars ? `${chars.toLocaleString('es-AR')} caracteres capturados` : 'sin texto — solo titular';
+    return `
+    <div class="canasta-item-wrap">
+      <div class="canasta-item">
+        <div class="canasta-item-body">
+          <div class="canasta-item-title">${item.noticia.url ? `<a href="${item.noticia.url}" target="_blank">${escapeHtml(item.noticia.titulo)}</a>` : escapeHtml(item.noticia.titulo)}</div>
+          <div class="canasta-item-meta">${escapeHtml(item.fuente.nombre)} · ${item.cuerpo ? '✅' : '⚠️'} ${metaTxt}</div>
+        </div>
+        <div class="canasta-item-actions">
+          ${item.noticia.url ? `<button class="mini-btn" onclick="rescrapearCanasta(${i})">🔄 Re-scrapear</button>` : ''}
+          <button class="mini-btn" onclick="toggleEditarCuerpo(${i})">✏️ Editar/pegar texto</button>
+          <button class="mini-btn" onclick="quitarDeCanasta(${i})">Quitar</button>
+        </div>
+      </div>
+      <div class="canasta-edit-box" id="canastaEdit-${i}">
+        <textarea class="field" id="canastaEditTxt-${i}" style="min-height:160px" placeholder="Pegá acá el texto completo de la nota (por ejemplo copiado del artículo original) si el scraping automático no trajo suficiente contenido...">${escapeHtml(item.cuerpo || '')}</textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <button class="small-btn primary" onclick="guardarCuerpoManual(${i})">Guardar texto</button>
+          <button class="small-btn" onclick="toggleEditarCuerpo(${i})">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEditarCuerpo(i) {
+  document.getElementById('canastaEdit-' + i).classList.toggle('open');
+}
+async function guardarCuerpoManual(i) {
+  const cuerpo = document.getElementById('canastaEditTxt-' + i).value;
+  try {
+    const d = await apiPost('/api/canasta/editar-cuerpo', {index: i, cuerpo});
+    STATE.canasta = d.canasta;
+  } catch (e) { alert('Error al guardar: ' + e.message); return; }
+  renderCanasta();
+}
+
+async function quitarDeCanasta(i) {
+  try { const d = await apiPost('/api/canasta/quitar', {index: i}); STATE.canasta = d.canasta; } catch (e) {}
+  actualizarBadgeCanasta();
+  renderCanasta();
+}
+async function vaciarCanasta() {
+  if (!confirm('¿Vaciar toda la canasta?')) return;
+  try { const d = await apiPost('/api/canasta/vaciar', {}); STATE.canasta = d.canasta; } catch (e) {}
+  actualizarBadgeCanasta();
+  renderCanasta();
+}
+async function rescrapearCanasta(i) {
+  try { const d = await apiPost('/api/canasta/rescrapear', {index: i}); STATE.canasta = d.canasta; } catch (e) {}
+  renderCanasta();
+}
+async function exportarCanasta() {
+  try {
+    const d = await apiGet('/api/canasta/exportar');
+    await navigator.clipboard.writeText(d.texto).catch(() => {});
+    const w = window.open('', '_blank');
+    w.document.write(`<pre style="white-space:pre-wrap;font-family:monospace;padding:20px">${escapeHtml(d.texto)}</pre>`);
+  } catch (e) { alert('Error al exportar: ' + e.message); }
+}
+function setCanastaEstilo(e) { STATE.canastaEstilo = e; renderCanasta(); }
+function setCanastaTipo(t) { STATE.canastaTipo = t; renderCanasta(); }
+
+async function generarNotaCanasta() {
+  const key = requireApiKey(); if (!key) return;
+  STATE.canastaTema = document.getElementById('canastaTemaInput').value;
+  STATE.canastaContexto = document.getElementById('canastaContextoInput').value;
+  const out = document.getElementById('canastaResultOut');
+  out.innerHTML = `<div class="empty-note">Redactando<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  try {
+    const d = await apiPost('/api/canasta/generar', {api_key: key, tema: STATE.canastaTema, estilo: STATE.canastaEstilo, tipo: STATE.canastaTipo, contexto_extra: STATE.canastaContexto});
+    STATE.canastaResultado = d;
+    pintarCanastaResultado();
+  } catch (e) {
+    out.innerHTML = `<div class="err-box">${escapeHtml(e.message)}</div>`;
+  }
+}
+function pintarCanastaResultado() {
+  const out = document.getElementById('canastaResultOut');
+  if (!out) return;
+  const d = STATE.canastaResultado;
+  out.innerHTML = `
+    <div class="section-sub">${d.ok_count}/${d.total} fuentes con texto completo</div>
+    <textarea class="ai-textarea-copy" id="canastaResultTxt" readonly>${escapeHtml(d.resultado)}</textarea>
+    <button class="ai-copy-btn" onclick="copiarTexto('canastaResultTxt')">📋 Copiar</button>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SIDEBAR COLAPSABLE
+// ═══════════════════════════════════════════════════════════════════════
+function toggleSidebar() {
+  const grid = document.getElementById('appGrid');
+  const hidden = grid.classList.toggle('sidebar-hidden');
+  localStorage.setItem('mdp_sidebar_hidden', hidden ? '1' : '0');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MEDIR ALTURAS REALES PARA LOS ELEMENTOS STICKY (masthead / tab-nav)
+// ═══════════════════════════════════════════════════════════════════════
+function medirAlturasSticky() {
+  const masthead = document.querySelector('.masthead');
+  const tabNav = document.getElementById('tabNav');
+  if (masthead) document.documentElement.style.setProperty('--masthead-h', masthead.offsetHeight + 'px');
+  if (tabNav) document.documentElement.style.setProperty('--tabnav-h', tabNav.offsetHeight + 'px');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('mdp_api_key');
+  if (saved) document.getElementById('apiKeyInput').value = saved;
+  if (localStorage.getItem('mdp_sidebar_hidden') === '1') {
+    document.getElementById('appGrid').classList.add('sidebar-hidden');
+  }
+  const savedVista = localStorage.getItem('mdp_vista_modo');
+  if (savedVista === 'compact') {
+    STATE.vistaModo = 'compact';
+    document.querySelectorAll('.vista-btn').forEach(b => b.classList.toggle('active', b.dataset.vista === 'compact'));
+  }
+  cargarFuentesDisponibles();
+  cargarCanasta();
+  renderAgenda();
+
+  medirAlturasSticky();
+  window.addEventListener('resize', medirAlturasSticky);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirAlturasSticky);
+  setTimeout(medirAlturasSticky, 600); // por si las tipografías web tardan en aplicar
+
+  window.addEventListener('scroll', () => {
+    document.getElementById('scrollTopBtn').classList.toggle('visible', window.scrollY > 350);
+  });
+});
+</script>
+</body>
+</html>
