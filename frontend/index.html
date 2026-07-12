@@ -768,7 +768,7 @@ function renderNewsGrid(items, opts) {
     return `
       <div class="news-card" data-idx="${idx}">
         <div class="news-card-check ${checked ? 'checked' : ''}" onclick="event.stopPropagation();toggleSeleccion(${idx}, this)">${checked ? '✓' : '+'}</div>
-        <img class="news-card-img" data-url="${escapeHtml(item.noticia.url || '')}" src="${img || PLACEHOLDER_IMG}" onclick="abrirModalItem(${idx})" onerror="this.src='${PLACEHOLDER_IMG}'"/>
+        <img class="news-card-img" data-url="${escapeHtml(item.noticia.url || '')}" src="${img || PLACEHOLDER_IMG}" loading="lazy" decoding="async" onclick="abrirModalItem(${idx})" onerror="this.src='${PLACEHOLDER_IMG}'"/>
         <div class="news-card-body" onclick="abrirModalItem(${idx})">
           <div class="news-card-title">${escapeHtml(truncate(item.noticia.titulo, 110))}</div>
           <div class="news-card-foot">
@@ -894,7 +894,7 @@ function abrirModalItem(idx) {
     <button class="modal-close" onclick="cerrarModal()">✕</button>
     <span class="chip" style="background:${f.color}">${escapeHtml(f.nombre)}</span>
     <div class="modal-title">${escapeHtml(item.noticia.titulo)}</div>
-    <img class="modal-img" id="modalImg" data-url="${escapeHtml(item.noticia.url || '')}" src="${img || PLACEHOLDER_IMG}" onerror="this.src='${PLACEHOLDER_IMG}'"/>
+    <img class="modal-img" id="modalImg" data-url="${escapeHtml(item.noticia.url || '')}" src="${img || PLACEHOLDER_IMG}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'"/>
     <div class="modal-body" id="modalBody">${item.noticia.url ? '' : '(sin URL para leer el cuerpo)'}</div>
     <div class="modal-actions">
       ${item.noticia.url ? `<a class="modal-btn" href="${item.noticia.url}" target="_blank" rel="noopener">↗ Ver nota original</a>` : ''}
@@ -1752,6 +1752,19 @@ function pintarCanastaResultado() {
   `;
 }
 
+// ── DETECCIÓN DE CONEXIÓN LIMITADA ────────────────────────────────────
+// Network Information API: disponible en Chrome/Android (no en Safari/iOS,
+// ahí simplemente no se activa nada raro — se sigue el comportamiento
+// normal). navigator.connection.saveData es true cuando el usuario activó
+// "Ahorro de datos" en el navegador o el sistema.
+function conexionLimitada() {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!conn) return false;
+  if (conn.saveData) return true;
+  if (conn.effectiveType && ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return true;
+  return false;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // SIDEBAR COLAPSABLE (panel flotante con fondo oscuro, igual patrón que el
 // panel de IA — mucho más robusto en mobile que animar grid-template-columns)
@@ -1787,6 +1800,12 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const savedVista = localStorage.getItem('mdp_vista_modo');
   if (savedVista === 'compact') {
+    STATE.vistaModo = 'compact';
+    document.querySelectorAll('.vista-btn').forEach(b => b.classList.toggle('active', b.dataset.vista === 'compact'));
+  } else if (savedVista === null && conexionLimitada()) {
+    // Primera visita + el navegador señala "modo ahorro de datos" o conexión
+    // lenta (2g/3g): arrancamos en Compacta (sin imágenes) para no gastar de
+    // más. El usuario puede cambiarlo cuando quiera desde la barra lateral.
     STATE.vistaModo = 'compact';
     document.querySelectorAll('.vista-btn').forEach(b => b.classList.toggle('active', b.dataset.vista === 'compact'));
   }

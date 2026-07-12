@@ -1194,7 +1194,7 @@ def extraer_generico(html: str, fuente: dict) -> list:
     if fuente.get("es_wp"):
         feed_url = fuente["url"].rstrip("/") + "/feed/"
         try:
-            resp = requests.get(feed_url, headers=_FETCH_HEADERS, timeout=15)
+            resp = requests.get(feed_url, headers=_FETCH_HEADERS, timeout=(3, 8))
             if resp.status_code == 200 and "<rss" in resp.text[:500]:
                 return extraer_rss(resp.text)
         except Exception:
@@ -1397,7 +1397,7 @@ def _fallback_gnews(fuente: dict, motivo_original: str) -> dict:
     if not dominio or "news.google.com" in fuente.get("url", ""):
         return {"id": fuente["id"], "noticias": [], "error": motivo_original}
     try:
-        resp = requests.get(_gnews_url(dominio, fuente.get("id", "")), headers=HEADERS, timeout=15)
+        resp = requests.get(_gnews_url(dominio, fuente.get("id", "")), headers=HEADERS, timeout=(3, 8))
         resp.raise_for_status()
         noticias = extraer_rss(resp.text)
         for n in noticias:
@@ -1411,7 +1411,7 @@ def _fallback_gnews(fuente: dict, motivo_original: str) -> dict:
 def fetch_ultimas_ole() -> list:
     """Scrapea ole.com.ar/ultimas-noticias: el listado completo publicado, más allá de portada."""
     try:
-        resp = requests.get("https://www.ole.com.ar/ultimas-noticias", headers=HEADERS, timeout=15)
+        resp = requests.get("https://www.ole.com.ar/ultimas-noticias", headers=HEADERS, timeout=(3, 8))
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
         contenedores = soup.select("div[data-noteid]")
@@ -1442,7 +1442,7 @@ def fetch_ultimas_ole() -> list:
 
 def fetch_cobertura_ole_gnews() -> list:
     try:
-        resp = requests.get(_gnews_url("ole.com.ar", "ole"), headers=HEADERS, timeout=15)
+        resp = requests.get(_gnews_url("ole.com.ar", "ole"), headers=HEADERS, timeout=(3, 8))
         resp.raise_for_status()
         return [{"titulo": _limpiar_titulo_gnews(n["titulo"]), "url": n.get("url") or ""} for n in extraer_rss(resp.text)]
     except Exception:
@@ -1450,7 +1450,7 @@ def fetch_cobertura_ole_gnews() -> list:
 
 def fetch_fuente(fuente: dict) -> dict:
     try:
-        resp = requests.get(fuente["url"], headers=HEADERS, timeout=15)
+        resp = requests.get(fuente["url"], headers=HEADERS, timeout=(3, 8))
         resp.raise_for_status()
 
         if fuente.get("es_rss"):
@@ -2198,7 +2198,7 @@ def actualizar(req: ActualizarRequest):
         fuentes_a_cargar = TODAS_FUENTES
 
     resultados_nuevos, errores = {}, []
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=min(30, len(fuentes_a_cargar))) as executor:
         futures = {executor.submit(fetch_fuente, f): f for f in fuentes_a_cargar}
         for future in as_completed(futures):
             res = future.result()
