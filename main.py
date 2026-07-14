@@ -17,7 +17,9 @@ eso es infraestructura de automatización aparte de la app en sí. El momentum
 de la Agenda funciona "solo por sesión" (memoria en RAM del proceso): en el
 plan free de Render el proceso se reinicia cuando el servicio se "duerme" por
 inactividad, así que la canasta y el momentum se resetean en ese momento —
-igual que la app Streamlit cuando no tiene la planilla configurada.
+igual que la app Streamlit cuando no tiene la planilla configurada. La
+pre-carga automática al arrancar (ver más abajo) ayuda a que, apenas alguien
+entra con el proceso ya despierto, encuentre todo cargado igual.
 """
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +29,7 @@ from starlette.responses import Response
 from pydantic import BaseModel
 from typing import Optional
 import os, base64, secrets
-import re, json, math, random, unicodedata
+import re, json, math, random, unicodedata, threading
 from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -76,7 +78,6 @@ class BasicAuthMiddleware(BaseHTTPMiddleware):
         )
 
 app.add_middleware(BasicAuthMiddleware)
-
 
 MAX_ITEMS = 50
 SIMILITUD_UMBRAL = 0.22
@@ -2186,49 +2187,24 @@ def get_fuentes():
         "total": len(TODAS_FUENTES),
     }
 
-@app.post("/api/actualizar")
-def actualizar(req: ActualizarRequest):
-    actualizacion_parcial = req.solo_nac or req.solo_int
-    _ole = next(f for f in FUENTES_NAC if f["id"] == "ole")
-    if req.solo_nac:
-        fuentes_a_cargar = FUENTES_NAC + FUENTES_ESP
-    elif req.solo_int:
-        fuentes_a_cargar = FUENTES_INT + [_ole] + FUENTES_ESP
-    else:
-        fuentes_a_cargar = TODAS_FUENTES
+_ACTUALIZAR_LOCK = threading.Lock()
 
-    resultados_nuevos, errores = {}, []
-    with ThreadPoolExecutor(max_workers=min(30, len(fuentes_a_cargar))) as executor:
-        futures = {executor.submit(fetch_fuente, f): f for f in fuentes_a_cargar}
-        for future in as_completed(futures):
-            res = future.result()
-            resultados_nuevos[res["id"]] = res["noticias"]
-            if res["error"]:
-                errores.append(f"{res['id']}: {res['error']}")
-
-    if actualizacion_parcial:
-        fusion = dict(ESTADO["resultados"])
-        fusion.update(resultados_nuevos)
-        resultados_nuevos = fusion
-
-    ESTADO["resultados"] = resultados_nuevos
-    ESTADO["ultima_act"] = datetime.now().isoformat()
-    ESTADO["ole_analisis"] = analizar_ole_vs_compecencia_safe(resultados_nuevos)
-    ESTADO["prev_tendencias"] = ESTADO.get("tendencias") or []
-    ESTADO["tendencias"] = calcular_tendencias(resultados_nuevos)
-    ESTADO["agenda"] = construir_agenda(ESTADO["tendencias"], ESTADO["ole_analisis"], ESTADO["prev_tendencias"])
-
-    total_noticias = sum(len(v) for v in resultados_nuevos.values())
+def _respuesta_estado(total_medios: int, actualizacion_parcial: bool = False, errores: list = None) -> dict:
+    """Arma la misma forma de respuesta tanto para una actualización recién
+    hecha como para el estado ya cacheado en ESTADO (sin disparar scraping)."""
+    resultados = ESTADO["resultados"]
+    total_noticias = sum(len(v) for v in resultados.values())
     return {
+        "cargado": True,
         "fuentes": {
-            "nacionales": _resultados_a_fuentes(resultados_nuevos, FUENTES_NAC),
-            "internacionales": _resultados_a_fuentes(resultados_nuevos, FUENTES_INT),
-            "primicias": _resultados_a_fuentes(resultados_nuevos, FUENTES_ESP),
+            "nacionales": _resultados_a_fuentes(resultados, FUENTES_NAC),
+            "internacionales": _resultados_a_fuentes(resultados, FUENTES_INT),
+            "primicias": _resultados_a_fuentes(resultados, FUENTES_ESP),
         },
         "total_noticias": total_noticias,
-        "total_medios": len(fuentes_a_cargar),
+        "total_medios": total_medios,
         "actualizacion_parcial": actualizacion_parcial,
-        "errores": errores,
+        "errores": errores or [],
         "ultima_act": ESTADO["ultima_act"],
         "tendencias": ESTADO["tendencias"],
         "ole_analisis": ESTADO["ole_analisis"],
@@ -2241,6 +2217,74 @@ def actualizar(req: ActualizarRequest):
             "hot": len([t for t in ESTADO["tendencias"] if t["cant_medios"] / max(len(TODAS_FUENTES), 1) >= 0.20]),
         },
     }
+
+def _ejecutar_actualizacion(solo_nac: bool = False, solo_int: bool = False) -> dict:
+    """El scraping en sí — la usan tanto el endpoint /api/actualizar (cuando
+    el usuario aprieta el botón) como la pre-carga automática al arrancar el
+    servidor. El lock evita que las dos cosas escaneen al mismo tiempo y se
+    pisen los resultados."""
+    with _ACTUALIZAR_LOCK:
+        actualizacion_parcial = solo_nac or solo_int
+        _ole = next(f for f in FUENTES_NAC if f["id"] == "ole")
+        if solo_nac:
+            fuentes_a_cargar = FUENTES_NAC + FUENTES_ESP
+        elif solo_int:
+            fuentes_a_cargar = FUENTES_INT + [_ole] + FUENTES_ESP
+        else:
+            fuentes_a_cargar = TODAS_FUENTES
+
+        resultados_nuevos, errores = {}, []
+        with ThreadPoolExecutor(max_workers=min(30, len(fuentes_a_cargar))) as executor:
+            futures = {executor.submit(fetch_fuente, f): f for f in fuentes_a_cargar}
+            for future in as_completed(futures):
+                res = future.result()
+                resultados_nuevos[res["id"]] = res["noticias"]
+                if res["error"]:
+                    errores.append(f"{res['id']}: {res['error']}")
+
+        if actualizacion_parcial:
+            fusion = dict(ESTADO["resultados"])
+            fusion.update(resultados_nuevos)
+            resultados_nuevos = fusion
+
+        ESTADO["resultados"] = resultados_nuevos
+        ESTADO["ultima_act"] = datetime.now().isoformat()
+        ESTADO["ole_analisis"] = analizar_ole_vs_compecencia_safe(resultados_nuevos)
+        ESTADO["prev_tendencias"] = ESTADO.get("tendencias") or []
+        ESTADO["tendencias"] = calcular_tendencias(resultados_nuevos)
+        ESTADO["agenda"] = construir_agenda(ESTADO["tendencias"], ESTADO["ole_analisis"], ESTADO["prev_tendencias"])
+
+        return _respuesta_estado(len(fuentes_a_cargar), actualizacion_parcial, errores)
+
+@app.post("/api/actualizar")
+def actualizar(req: ActualizarRequest):
+    return _ejecutar_actualizacion(req.solo_nac, req.solo_int)
+
+@app.get("/api/estado-inicial")
+def estado_inicial():
+    """El frontend llama esto apenas abre la página — si el servidor ya
+    tiene noticias cargadas (de la pre-carga automática al arrancar, o de
+    una visita anterior reciente), las devuelve al toque, sin escanear de
+    nuevo. Si todavía no hay nada, dice cargado:false y el frontend se
+    queda esperando un toque más o muestra el botón manual."""
+    if not ESTADO.get("ultima_act"):
+        return {"cargado": False}
+    return _respuesta_estado(len(ESTADO["resultados"]))
+
+@app.on_event("startup")
+def _precarga_automatica():
+    """Apenas arranca el proceso (deploy nuevo, o Render despertando del
+    sueño), dispara un escaneo completo en segundo plano — así, si alguien
+    entra mientras el proceso ya está despierto, encuentra todo cargado sin
+    tocar el botón. No bloquea el arranque del servidor: corre en un thread
+    aparte."""
+    def _tarea():
+        try:
+            _ejecutar_actualizacion(False, False)
+            print("✅ Pre-carga automática al arrancar: completada.")
+        except Exception as e:
+            print(f"⚠️ Pre-carga automática al arrancar falló: {e}")
+    threading.Thread(target=_tarea, daemon=True).start()
 
 @app.get("/api/imagenes")
 def api_imagenes_noop():
